@@ -20,7 +20,11 @@ func _ready() -> void:
 	$VBoxPrincipal/CuerpoMonitor/PanelDerecho/BotonesMenu/BtnMantenimiento.pressed.connect(func(): cambiar_menu("mantenimiento"))
 	$VBoxPrincipal/CuerpoMonitor/PanelDerecho/BotonesMenu/BtnDiseno.pressed.connect(func(): cambiar_menu("diseno"))
 	$VBoxPrincipal/CuerpoMonitor/PanelDerecho/BotonesMenu/BtnLanzamiento.pressed.connect(func(): cambiar_menu("lanzamiento"))
-	
+	$VBoxPrincipal/CuerpoMonitor/PanelDerecho/BotonesMenu/BtnComprar.text = "Comprar"
+	$VBoxPrincipal/CuerpoMonitor/PanelDerecho/BotonesMenu/BtnMantenimiento.text = "Mantenimiento"
+	$VBoxPrincipal/CuerpoMonitor/PanelDerecho/BotonesMenu/BtnDiseno.text = "Diseño"
+	$VBoxPrincipal/CuerpoMonitor/PanelDerecho/BotonesMenu/BtnLanzamiento.text = "Lanzamiento"
+	btn_siguiente_dia.text = "Siguiente Día (Sol %d)" % GameManager.current_sol
 	# Conectar barra superior
 	$VBoxPrincipal/BarraSuperior/BtnNotas.pressed.connect(func(): ventana_notas.visible = !ventana_notas.visible)
 	btn_siguiente_dia.pressed.connect(_on_siguiente_dia_pressed)
