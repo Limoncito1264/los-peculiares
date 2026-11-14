@@ -1,6 +1,8 @@
 [gd_scene format=3 uid="uid://bdq3cs2y153ob"]
 
 [ext_resource type="Script" uid="uid://dear635qjp27h" path="res://scenes/cockpit_main.gd" id="1_tm1x2"]
+[ext_resource type="Script" uid="uid://bvbh2sa3mbtc7" path="res://scripts/monitor/monitor_hangar.gd" id="2_kmysv"]
+[ext_resource type="Script" uid="uid://cpwsw05vu3yin" path="res://scripts/monitor/fondo_espacio.gd" id="3_spmxp"]
 
 [node name="CockpitMain" type="Control" unique_id=1323599474]
 layout_mode = 3
@@ -77,6 +79,7 @@ layout_mode = 2
 [node name="CamaraTierraContainer" type="PanelContainer" parent="VBoxPrincipal/CuerpoMonitor/PanelDerecho" unique_id=991427991]
 layout_mode = 2
 size_flags_vertical = 3
+script = ExtResource("2_kmysv")
 
 [node name="VentanaNotas" type="Panel" parent="." unique_id=2020837510]
 layout_mode = 0
@@ -88,3 +91,9 @@ visible = false
 layout_mode = 0
 offset_right = 8.0
 offset_bottom = 8.0
+
+[node name="FondoEspacio" type="TextureRect" parent="." unique_id=869412950]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("3_spmxp")
