@@ -1,0 +1,90 @@
+[gd_scene format=3 uid="uid://bdq3cs2y153ob"]
+
+[ext_resource type="Script" uid="uid://dear635qjp27h" path="res://scenes/cockpit_main.gd" id="1_tm1x2"]
+
+[node name="CockpitMain" type="Control" unique_id=1323599474]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_tm1x2")
+
+[node name="VBoxPrincipal" type="VBoxContainer" parent="." unique_id=1608062145]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BarraSuperior" type="VBoxContainer" parent="VBoxPrincipal" unique_id=1063356828]
+layout_mode = 2
+
+[node name="IconoSenal" type="Label" parent="VBoxPrincipal/BarraSuperior" unique_id=1746043241]
+layout_mode = 2
+
+[node name="LabelPresupuesto" type="Label" parent="VBoxPrincipal/BarraSuperior" unique_id=1400184965]
+layout_mode = 2
+
+[node name="BtnNotas" type="Button" parent="VBoxPrincipal/BarraSuperior" unique_id=696429360]
+layout_mode = 2
+text = "Notas"
+
+[node name="BtnSiguienteDia" type="Button" parent="VBoxPrincipal/BarraSuperior" unique_id=866029354]
+layout_mode = 2
+
+[node name="CuerpoMonitor" type="HBoxContainer" parent="VBoxPrincipal" unique_id=218580042]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PanelIzquierdo" type="VBoxContainer" parent="VBoxPrincipal/CuerpoMonitor" unique_id=1223163976]
+custom_minimum_size = Vector2(230, 0)
+layout_mode = 2
+
+[node name="CalendarioTareas" type="VBoxContainer" parent="VBoxPrincipal/CuerpoMonitor/PanelIzquierdo" unique_id=1254933590]
+layout_mode = 2
+
+[node name="CalendarioMes" type="GridContainer" parent="VBoxPrincipal/CuerpoMonitor/PanelIzquierdo" unique_id=1732943151]
+layout_mode = 2
+columns = 7
+
+[node name="ContenedorCentral" type="PanelContainer" parent="VBoxPrincipal/CuerpoMonitor" unique_id=1906711242]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PanelDerecho" type="VBoxContainer" parent="VBoxPrincipal/CuerpoMonitor" unique_id=834634379]
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 2
+
+[node name="BotonesMenu" type="GridContainer" parent="VBoxPrincipal/CuerpoMonitor/PanelDerecho" unique_id=1379853330]
+layout_mode = 2
+columns = 2
+
+[node name="BtnComprar" type="Button" parent="VBoxPrincipal/CuerpoMonitor/PanelDerecho/BotonesMenu" unique_id=741258026]
+layout_mode = 2
+
+[node name="BtnMantenimiento" type="Button" parent="VBoxPrincipal/CuerpoMonitor/PanelDerecho/BotonesMenu" unique_id=93624302]
+layout_mode = 2
+
+[node name="BtnDiseno" type="Button" parent="VBoxPrincipal/CuerpoMonitor/PanelDerecho/BotonesMenu" unique_id=1069140633]
+layout_mode = 2
+
+[node name="BtnLanzamiento" type="Button" parent="VBoxPrincipal/CuerpoMonitor/PanelDerecho/BotonesMenu" unique_id=851041442]
+layout_mode = 2
+
+[node name="CamaraTierraContainer" type="PanelContainer" parent="VBoxPrincipal/CuerpoMonitor/PanelDerecho" unique_id=991427991]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VentanaNotas" type="Panel" parent="." unique_id=2020837510]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="TextEdit" type="TextEdit" parent="VentanaNotas" unique_id=1204014658]
+visible = false
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 8.0
