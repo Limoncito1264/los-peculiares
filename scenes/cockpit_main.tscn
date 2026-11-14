@@ -1,6 +1,8 @@
 [gd_scene format=3 uid="uid://bdq3cs2y153ob"]
 
 [ext_resource type="Script" uid="uid://dear635qjp27h" path="res://scenes/cockpit_main.gd" id="1_tm1x2"]
+[ext_resource type="Script" uid="uid://cw6u8g2s1d2g5" path="res://scripts/calendario/lista_eventos.gd" id="2_kmysv"]
+[ext_resource type="Script" uid="uid://dvtbwasimbncg" path="res://scripts/calendario/calendario_dias.gd" id="3_spmxp"]
 
 [node name="CockpitMain" type="Control" unique_id=1323599474]
 layout_mode = 3
@@ -45,10 +47,12 @@ layout_mode = 2
 
 [node name="CalendarioTareas" type="VBoxContainer" parent="VBoxPrincipal/CuerpoMonitor/PanelIzquierdo" unique_id=1254933590]
 layout_mode = 2
+script = ExtResource("2_kmysv")
 
 [node name="CalendarioMes" type="GridContainer" parent="VBoxPrincipal/CuerpoMonitor/PanelIzquierdo" unique_id=1732943151]
 layout_mode = 2
 columns = 7
+script = ExtResource("3_spmxp")
 
 [node name="ContenedorCentral" type="PanelContainer" parent="VBoxPrincipal/CuerpoMonitor" unique_id=1906711242]
 layout_mode = 2
