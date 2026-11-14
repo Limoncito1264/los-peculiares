@@ -13,6 +13,15 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_tm1x2")
 
+[node name="ColorRect" type="ColorRect" parent="." unique_id=843242540]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.039215688, 0.05882353, 0.09411765, 1)
+
 [node name="VBoxPrincipal" type="VBoxContainer" parent="." unique_id=1608062145]
 layout_mode = 1
 anchors_preset = 15
@@ -21,21 +30,139 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="BarraSuperior" type="VBoxContainer" parent="VBoxPrincipal" unique_id=1063356828]
+[node name="HeaderSuperior" type="VBoxContainer" parent="VBoxPrincipal" unique_id=2062049628]
 layout_mode = 2
 
-[node name="IconoSenal" type="Label" parent="VBoxPrincipal/BarraSuperior" unique_id=1746043241]
+[node name="FilaArriba" type="HBoxContainer" parent="VBoxPrincipal/HeaderSuperior" unique_id=1899574106]
 layout_mode = 2
 
-[node name="LabelPresupuesto" type="Label" parent="VBoxPrincipal/BarraSuperior" unique_id=1400184965]
+[node name="CajaLogo" type="VBoxContainer" parent="VBoxPrincipal/HeaderSuperior/FilaArriba" unique_id=642748666]
 layout_mode = 2
 
-[node name="BtnNotas" type="Button" parent="VBoxPrincipal/BarraSuperior" unique_id=696429360]
+[node name="LblTitulo" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaArriba/CajaLogo" unique_id=1169762557]
 layout_mode = 2
-text = "Notas"
+text = "ARES"
 
-[node name="BtnSiguienteDia" type="Button" parent="VBoxPrincipal/BarraSuperior" unique_id=866029354]
+[node name="LblSubtitulo" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaArriba/CajaLogo" unique_id=931260975]
 layout_mode = 2
+text = "RESCATE / MARTE"
+
+[node name="CajaSolActual" type="VBoxContainer" parent="VBoxPrincipal/HeaderSuperior/FilaArriba" unique_id=1789404817]
+layout_mode = 2
+
+[node name="LblSolContador" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaArriba/CajaSolActual" unique_id=1296828083]
+layout_mode = 2
+text = "SOL 0 / 60"
+
+[node name="LblEstadoRemoto" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaArriba/CajaSolActual" unique_id=918577628]
+layout_mode = 2
+text = "COORDINACION REMOTA"
+
+[node name="CentroBotonSol" type="VBoxContainer" parent="VBoxPrincipal/HeaderSuperior/FilaArriba" unique_id=518342658]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BtnSiguienteSol" type="Button" parent="VBoxPrincipal/HeaderSuperior/FilaArriba/CentroBotonSol" unique_id=1422432592]
+layout_mode = 2
+text = "SIGUIENTE SOL >>"
+
+[node name="LblProximoEvento" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaArriba/CentroBotonSol" unique_id=1181082967]
+layout_mode = 2
+text = "SOL 3 * Inspeccion de la base"
+horizontal_alignment = 1
+
+[node name="CajaDinero" type="VBoxContainer" parent="VBoxPrincipal/HeaderSuperior/FilaArriba" unique_id=1328109876]
+layout_mode = 2
+
+[node name="LblDineroTitulo" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaArriba/CajaDinero" unique_id=779969946]
+layout_mode = 2
+text = "DINERO DISPONIBLE"
+
+[node name="LblDineroValor" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaArriba/CajaDinero" unique_id=1354671673]
+layout_mode = 2
+text = "1000 $"
+
+[node name="BtnNotas" type="Button" parent="VBoxPrincipal/HeaderSuperior/FilaArriba" unique_id=732217009]
+layout_mode = 2
+text = "NOTAS"
+
+[node name="FilaTarjetas" type="HBoxContainer" parent="VBoxPrincipal/HeaderSuperior" unique_id=2075919647]
+layout_mode = 2
+
+[node name="CardPlazo" type="PanelContainer" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas" unique_id=1004290511]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas/CardPlazo" unique_id=1526109983]
+layout_mode = 2
+
+[node name="LblTitulo" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas/CardPlazo/VBox" unique_id=352551604]
+layout_mode = 2
+text = "PLAZO DE MISION"
+
+[node name="LblValor" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas/CardPlazo/VBox" unique_id=360212534]
+layout_mode = 2
+text = "60 / 60 SOLES"
+
+[node name="CardTrabajadores" type="PanelContainer" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas" unique_id=1004173706]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas/CardTrabajadores" unique_id=455486833]
+layout_mode = 2
+
+[node name="LblTitulo" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas/CardTrabajadores/VBox" unique_id=1243727327]
+layout_mode = 2
+text = "TRABAJADORES"
+
+[node name="LblValor" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas/CardTrabajadores/VBox" unique_id=257217101]
+layout_mode = 2
+text = "12 / 12 LIBRES"
+
+[node name="CardSenal" type="PanelContainer" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas" unique_id=1307021454]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas/CardSenal" unique_id=1080241]
+layout_mode = 2
+
+[node name="LblTitulo" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas/CardSenal/VBox" unique_id=521770656]
+layout_mode = 2
+text = "SEÑAL TIERRA"
+
+[node name="LblValor" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas/CardSenal/VBox" unique_id=1588681079]
+layout_mode = 2
+text = "100% * ESTABLE"
+
+[node name="CardElectricidad" type="PanelContainer" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas" unique_id=1291451763]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas/CardElectricidad" unique_id=683454585]
+layout_mode = 2
+
+[node name="LblTitulo" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas/CardElectricidad/VBox" unique_id=1873294610]
+layout_mode = 2
+text = "ELECTRICIDAD"
+
+[node name="LblValor" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas/CardElectricidad/VBox" unique_id=103656834]
+layout_mode = 2
+text = "88% * OPERATIVA"
+
+[node name="CardMision" type="PanelContainer" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas" unique_id=1959734893]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas/CardMision" unique_id=1721426385]
+layout_mode = 2
+
+[node name="LblTitulo" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas/CardMision/VBox" unique_id=280862193]
+layout_mode = 2
+text = "MISION DE RESCATE"
+
+[node name="LblValor" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaTarjetas/CardMision/VBox" unique_id=1743430322]
+layout_mode = 2
+text = "TIERRA >> MARTE"
 
 [node name="CuerpoMonitor" type="HBoxContainer" parent="VBoxPrincipal" unique_id=218580042]
 layout_mode = 2
@@ -83,12 +210,17 @@ layout_mode = 2
 size_flags_vertical = 3
 
 [node name="VentanaNotas" type="Panel" parent="." unique_id=2020837510]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
-
-[node name="TextEdit" type="TextEdit" parent="VentanaNotas" unique_id=1204014658]
 visible = false
 layout_mode = 0
-offset_right = 8.0
-offset_bottom = 8.0
+offset_left = 430.0
+offset_top = 200.0
+offset_right = 850.0
+offset_bottom = 460.0
+
+[node name="TextEdit" type="TextEdit" parent="VentanaNotas" unique_id=1204014658]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
