@@ -106,3 +106,126 @@ func evaluate_launch_success() -> Dictionary:
 func change_phase(new_phase: MissionPhase) -> void:
 	current_phase = new_phase
 	Events.phase_changed.emit(new_phase)
+
+
+# --- SISTEMA DE MANTENIMIENTO ---
+var turno_marte_usado: bool = false
+var fallas_activas: Array[Dictionary] = []
+
+var catalogo_fallas: Array[Dictionary] = [
+	{
+		"id": "mars_antenna",
+		"ubicacion": "MARTE",
+		"titulo": "Antena Desalineada",
+		"desc": "Corta la señal con la Tierra hasta salir a recalibrar el plato.",
+		"costo_dinero": 0,
+		"costo_turno": true
+	},
+	{
+		"id": "mars_solar_dust",
+		"ubicacion": "MARTE",
+		"titulo": "Polvo en Paneles Solares",
+		"desc": "Modo ahorro: apaga la cámara de la Tierra y bloquea las Notas.",
+		"costo_dinero": 0,
+		"costo_turno": true
+	},
+	{
+		"id": "mars_telemetry",
+		"ubicacion": "MARTE",
+		"titulo": "Interferencia en Telemetría",
+		"desc": "Oculta el porcentaje real de avance del cohete.",
+		"costo_dinero": 50,
+		"costo_turno": false
+	},
+	{
+		"id": "mars_clock_drift",
+		"ubicacion": "MARTE",
+		"titulo": "Fallo en Reloj Orbital",
+		"desc": "Desincronización: cada jornada consume 2 Soles del plazo.",
+		"costo_dinero": 0,
+		"costo_turno": true
+	},
+	{
+		"id": "earth_crane",
+		"ubicacion": "TIERRA",
+		"titulo": "Grúa de Ensamblaje Averiada",
+		"desc": "Los chalanes no pueden mover piezas. Construcción detenida.",
+		"costo_dinero": 150,
+		"costo_turno": false
+	},
+	{
+		"id": "earth_weld",
+		"ubicacion": "TIERRA",
+		"titulo": "Soldadura Defectuosa en Tanque",
+		"desc": "Microfractura en el fuselaje. Riesgo crítico en el lanzamiento.",
+		"costo_dinero": 120,
+		"costo_turno": false
+	},
+	{
+		"id": "earth_burnout",
+		"ubicacion": "TIERRA",
+		"titulo": "Agotamiento de los Chalanes",
+		"desc": "El personal en Tierra está exhausto y avanza más lento.",
+		"costo_dinero": 100,
+		"costo_turno": false
+	},
+	{
+		"id": "earth_shortcircuit",
+		"ubicacion": "TIERRA",
+		"titulo": "Cortocircuito en Banco de Pruebas",
+		"desc": "El balance energético de la nave pierde -15 puntos.",
+		"costo_dinero": 90,
+		"costo_turno": false
+	},
+	{
+		"id": "earth_cleanroom",
+		"ubicacion": "TIERRA",
+		"titulo": "Polvo en la Sala Limpia",
+		"desc": "Contaminación en sensores: pierdes -5 puntos de ciencia por Sol.",
+		"costo_dinero": 75,
+		"costo_turno": false
+	}
+]
+
+func tiene_falla(id_falla: String) -> bool:
+	for f in fallas_activas:
+		if f["id"] == id_falla:
+			return true
+	return false
+
+func intentar_generar_falla() -> void:
+	turno_marte_usado = false
+	if fallas_activas.size() < 4 and randf() < 0.40:
+		var disponibles: Array[Dictionary] = []
+		for item in catalogo_fallas:
+			if not tiene_falla(item["id"]):
+				disponibles.append(item)
+		if disponibles.size() > 0:
+			var nueva: Dictionary = disponibles.pick_random().duplicate()
+			fallas_activas.append(nueva)
+			if nueva["id"] == "mars_antenna":
+				has_signal = false
+				Events.signal_status_changed.emit(false)
+
+func reparar_falla(indice: int) -> bool:
+	if indice < 0 or indice >= fallas_activas.size():
+		return false
+	var falla: Dictionary = fallas_activas[indice]
+	if falla["ubicacion"] == "TIERRA":
+		if not has_signal or budget < falla["costo_dinero"]:
+			return false
+		budget -= falla["costo_dinero"]
+	elif falla["ubicacion"] == "MARTE":
+		if falla["costo_turno"] and turno_marte_usado:
+			return false
+		if budget < falla["costo_dinero"]:
+			return false
+		budget -= falla["costo_dinero"]
+		if falla["costo_turno"]:
+			turno_marte_usado = true
+		if falla["id"] == "mars_antenna":
+			has_signal = true
+			Events.signal_status_changed.emit(true)
+	fallas_activas.remove_at(indice)
+	Events.resources_updated.emit()
+	return true
