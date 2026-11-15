@@ -196,51 +196,7 @@ func _host() -> Node:
 
 
 func _open_simulation() -> void:
-	var rows := GameManager.simulate_launch()
-	var all_ok := true
-	for r in rows:
-		if not r["ok"]:
-			all_ok = false
-
-	var m := AresUI.modal(AresUI.TEAL, 684)
-	var root: Control = m["root"]
-	var body: VBoxContainer = m["body"]
-
-	body.add_child(AresUI.label("MODO SIMULACIÓN / DIAGNÓSTICO", 12, AresUI.TEAL))
-	body.add_child(AresUI.label("Prueba, detecta y corrige.", 32, AresUI.TEXT, true))
-	body.add_child(AresUI.label("CONFIGURACIÓN COMPLETA" if all_ok else "CONFIGURACIÓN INCOMPLETA", 13,
-		AresUI.TEAL if all_ok else AresUI.AMBER))
-	body.add_child(AresUI.label("TIERRA  >>>  TRAYECTORIA VIRTUAL  >>>  MARTE", 17, AresUI.TEAL, true))
-	body.add_child(AresUI.hline())
-
-	for r in rows:
-		var p := PanelContainer.new()
-		p.add_theme_stylebox_override("panel", AresUI.box(AresUI.BG_INSET, AresUI.BORDER, 14))
-		var v := VBoxContainer.new()
-		v.add_theme_constant_override("separation", 4)
-		p.add_child(v)
-		v.add_child(AresUI.label(String(r["name"]), 20, AresUI.TEXT, true))
-		v.add_child(AresUI.label(String(r["text"]), 12, AresUI.TEAL if r["ok"] else AresUI.AMBER))
-		body.add_child(p)
-
-	body.add_child(AresUI.spacer())
-	body.add_child(AresUI.label("La simulación no consume piezas, comida ni materiales.", 12, AresUI.MUTED))
-
-	var buttons := HBoxContainer.new()
-	buttons.add_theme_constant_override("separation", 16)
-	var b_close := AresUI.button("CERRAR INFORME", "secondary")
-	b_close.custom_minimum_size = Vector2(300, 48)
-	b_close.pressed.connect(root.queue_free)
-	buttons.add_child(b_close)
-	var b_design := AresUI.button("IR A DISEÑO  >>", "primary")
-	b_design.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	b_design.pressed.connect(_go_to_design.bind(root))
-	b_design.visible = not all_ok
-	buttons.add_child(b_design)
-	body.add_child(buttons)
-
-	_host().add_child(root)
-
+	LaunchSlingshot.open(_host(), true)
 
 func _go_to_design(overlay: Node) -> void:
 	overlay.queue_free()
@@ -305,11 +261,13 @@ func _open_confirm() -> void:
 
 func _confirm_launch(overlay: Node) -> void:
 	overlay.queue_free()
-	var result := GameManager.launch_real()
-	if result["success"]:
-		_open_victory(result)
-	else:
-		push_warning("Lanzamiento rechazado: " + GameManager.launch_block_reason())
+	var s := LaunchSlingshot.open(_host(), false)
+	s.finished.connect(_on_slingshot_finished)
+
+
+func _on_slingshot_finished(success: bool) -> void:
+	if success:
+		_open_victory({"arrival": GameManager.arrival_sol(), "food_left": GameManager.food_rations})
 
 
 func _open_victory(result: Dictionary) -> void:
@@ -342,5 +300,6 @@ func _open_victory(result: Dictionary) -> void:
 	var b := AresUI.button("VOLVER A LA CONSOLA", "primary")
 	b.pressed.connect(root.queue_free)
 	body.add_child(b)
+	
 
 	_host().add_child(root)
