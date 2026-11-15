@@ -1,38 +1,40 @@
 extends Node
 
+const Catalog = preload("res://data/shop_catalog.gd")
+
+signal state_changed
+
 enum MissionPhase { DESIGN, MANAGEMENT, SIMULATION, EVALUATION }
 var current_phase: MissionPhase = MissionPhase.DESIGN
 
 # --- Supervivencia en Marte y Tiempo Límite ---
 const MAX_SOLS: int = 60
 var current_sol: int = 1
-var food_rations: float = 60.0        # Suministros para 60 días
-var has_signal: bool = true           # Estado de comunicación Tierra-Marte
+var food_rations: float = 60.0
+var signal_active: bool = true
 var blackout_days_left: int = 0
 
 # --- Administración de Recursos y Subordinados ---
-var budget: int = 1000                # Dinero disponible
-var staff_count: int = 10             # Personal asignado en la Tierra
-var crew_efficiency: float = 1.0      # Afectado por tus órdenes o falta de señal
-var build_progress: float = 0.0       # 0.0 a 100.0% de construcción de la nave (ahora = piezas listas / total)
+var budget: int = 1000
+var staff_count: int = 12
+var crew_efficiency: float = 1.0
+var build_progress: float = 0.0
 
-# --- Métricas de Ingeniería (Trade-offs) ---
+# --- Métricas de Ingeniería ---
 var equipped_parts: Array[SpacecraftPart] = []
-var total_mass: float = 1000.0        # Masa base de la cápsula
-var net_power: float = 0.0            # Balance energético
-var science_score: int = 0            # Instrumentos científicos equipados
-var launch_capacity: float = 3000.0   # Masa máxima que soporta el vehículo elegido
-var orbital_alignment: float = 100.0  # Se degrada si te pasas de la ventana de 60 días
-
+var total_mass: float = 1000.0
+var net_power: float = 0.0
+var science_score: int = 0
+var launch_capacity: float = 3000.0
+var orbital_alignment: float = 100.0
 
 # =====================================================================
-# MÓDULOS DISEÑO (03) Y LANZAMIENTO (04)  — NUEVO
+# MÓDULOS DISEÑO (03) Y LANZAMIENTO (04)
 # =====================================================================
 enum PartState { PENDING, IN_PROGRESS, READY }
 
-const FLIGHT_DAYS: int = 8   # [Figma] "VUELO ESTIMADO 8 DÍAS"
+const FLIGHT_DAYS: int = 8
 
-# Nombre y unidad de cada insumo. Las claves deben coincidir con las de la tienda (tab_shop).
 const MATERIAL_INFO := {
 	"aluminio":   ["Aluminio 6061", "kg"],
 	"titanio":    ["Titanio Ti-6Al", "kg"],
@@ -44,8 +46,6 @@ const MATERIAL_INFO := {
 	"c_termico":  ["Sensor térmico", "u"],
 }
 
-# "work" = trabajador-días necesarios (30 con 6 trabajadores = 5 días, como en Figma).
-# OJO: solo la receta del fuselaje sale de Figma; el resto son PLACEHOLDERS.
 const ROCKET_PARTS := [
 	{"id": "fuselaje", "name": "Fuselaje principal",
 		"recipe": {"aluminio": 40, "c_guiado": 2}, "work": 30,
@@ -61,7 +61,6 @@ const ROCKET_PARTS := [
 		"fault": "navegación sin configurar"},
 ]
 
-# Insumos recibidos (la tienda debe llamar a add_material cuando llega un pedido).
 var inventory: Dictionary = {
 	"aluminio": 0, "titanio": 0, "acero": 0, "fibra": 0,
 	"c_guiado": 0, "c_potencia": 0, "c_enlace": 0, "c_termico": 0,
@@ -70,10 +69,115 @@ var part_state: Array[int] = [0, 0, 0, 0]
 var part_workers: Array[int] = [0, 0, 0, 0]
 var part_days_left: Array[float] = [0.0, 0.0, 0.0, 0.0]
 
+# --- Tienda (materiales, circuitos, suministros) ---
+var orders_today: int = 0
+var pending_orders: Array = []
+var supply_stock: Dictionary = {}
+var pending_supplies: Array = []
+
+# --- Sistema de Mantenimiento (9 fallas reales) ---
+var turno_marte_usado: bool = false
+
+var _faults: Array = [
+	{
+		"id": "mars_antenna",
+		"ubicacion": "MARTE",
+		"titulo": "Antena Desalineada",
+		"desc": "Corta la señal con la Tierra hasta salir a recalibrar el plato.",
+		"costo_dinero": 0,
+		"costo_turno": true,
+		"activa": false
+	},
+	{
+		"id": "mars_solar_dust",
+		"ubicacion": "MARTE",
+		"titulo": "Polvo en Paneles Solares",
+		"desc": "Modo ahorro: apaga la cámara de la Tierra y bloquea las Notas.",
+		"costo_dinero": 0,
+		"costo_turno": true,
+		"activa": false
+	},
+	{
+		"id": "mars_telemetry",
+		"ubicacion": "MARTE",
+		"titulo": "Interferencia en Telemetría",
+		"desc": "Oculta el porcentaje real de avance del cohete.",
+		"costo_dinero": 50,
+		"costo_turno": false,
+		"activa": false
+	},
+	{
+		"id": "mars_clock_drift",
+		"ubicacion": "MARTE",
+		"titulo": "Fallo en Reloj Orbital",
+		"desc": "Desincronización: cada jornada consume 2 Soles del plazo.",
+		"costo_dinero": 0,
+		"costo_turno": true,
+		"activa": false
+	},
+	{
+		"id": "earth_crane",
+		"ubicacion": "TIERRA",
+		"titulo": "Grúa de Ensamblaje Averiada",
+		"desc": "Los chalanes no pueden mover piezas. Construcción detenida.",
+		"costo_dinero": 150,
+		"costo_turno": false,
+		"activa": false
+	},
+	{
+		"id": "earth_weld",
+		"ubicacion": "TIERRA",
+		"titulo": "Soldadura Defectuosa en Tanque",
+		"desc": "Microfractura en el fuselaje. Riesgo crítico en el lanzamiento.",
+		"costo_dinero": 120,
+		"costo_turno": false,
+		"activa": false
+	},
+	{
+		"id": "earth_burnout",
+		"ubicacion": "TIERRA",
+		"titulo": "Agotamiento de los Chalanes",
+		"desc": "El personal en Tierra está exhausto y avanza más lento.",
+		"costo_dinero": 100,
+		"costo_turno": false,
+		"activa": false
+	},
+	{
+		"id": "earth_shortcircuit",
+		"ubicacion": "TIERRA",
+		"titulo": "Cortocircuito en Banco de Pruebas",
+		"desc": "El balance energético de la nave pierde -15 puntos.",
+		"costo_dinero": 90,
+		"costo_turno": false,
+		"activa": false
+	},
+	{
+		"id": "earth_cleanroom",
+		"ubicacion": "TIERRA",
+		"titulo": "Polvo en la Sala Limpia",
+		"desc": "Contaminación en sensores: pierdes -5 puntos de ciencia por Sol.",
+		"costo_dinero": 75,
+		"costo_turno": false,
+		"activa": false
+	}
+]
+
+
+func _ready() -> void:
+	_init_shop_state()
+
+
+func _init_shop_state() -> void:
+	for it in Catalog.all_items():
+		inventory[it["id"]] = int(inventory.get(it["id"], 0))
+	for s in Catalog.SUPPLIES:
+		supply_stock[s["id"]] = int(supply_stock.get(s["id"], 0))
+
 
 func add_material(key: String, amount: int) -> void:
 	inventory[key] = int(inventory.get(key, 0)) + amount
 	Events.resources_updated.emit()
+	state_changed.emit()
 
 
 func workers_busy() -> int:
@@ -101,7 +205,6 @@ func fabrication_days(index: int, workers: int) -> int:
 	return maxi(1, ceili(work / float(maxi(workers, 1))))
 
 
-# Devuelve "" si todo salió bien, o el mensaje de error para mostrar en la UI.
 func start_fabrication(index: int, workers: int) -> String:
 	if index < 0 or index >= ROCKET_PARTS.size():
 		return "Pieza inválida."
@@ -121,6 +224,7 @@ func start_fabrication(index: int, workers: int) -> String:
 	part_days_left[index] = float(fabrication_days(index, workers))
 	Events.part_state_changed.emit(index)
 	Events.resources_updated.emit()
+	state_changed.emit()
 	return ""
 
 
@@ -136,12 +240,14 @@ func _sync_build_progress() -> void:
 	build_progress = 100.0 * float(systems_ready()) / float(ROCKET_PARTS.size())
 
 
-# Se llama desde advance_sol(); speed = eficiencia del día (menor sin señal).
 func _tick_fabrication(speed: float) -> void:
+	if tiene_falla("earth_crane"):
+		return
+	var mult := 0.5 if tiene_falla("earth_burnout") else 1.0
 	for i in ROCKET_PARTS.size():
 		if part_state[i] != PartState.IN_PROGRESS:
 			continue
-		part_days_left[i] -= speed
+		part_days_left[i] -= speed * mult
 		if part_days_left[i] <= 0.0:
 			part_days_left[i] = 0.0
 			part_state[i] = PartState.READY
@@ -159,7 +265,6 @@ func food_left_on_arrival() -> float:
 	return food_rations - float(FLIGHT_DAYS)
 
 
-# "" = se puede lanzar; si no, el motivo para mostrar en la UI.
 func launch_block_reason() -> String:
 	if systems_ready() < ROCKET_PARTS.size():
 		return "Faltan sistemas por fabricar. Revisa el modo simulación."
@@ -181,7 +286,6 @@ func can_launch() -> bool:
 	return launch_block_reason() == ""
 
 
-# Diagnóstico de la simulación. No consume nada.
 func simulate_launch() -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
 	for i in ROCKET_PARTS.size():
@@ -207,7 +311,6 @@ func simulate_launch() -> Array[Dictionary]:
 	return rows
 
 
-# Lanzamiento real e irreversible.
 func launch_real() -> Dictionary:
 	if not can_launch():
 		return {"success": false, "arrival": arrival_sol(), "food_left": food_left_on_arrival()}
@@ -217,13 +320,10 @@ func launch_real() -> Dictionary:
 	change_phase(MissionPhase.EVALUATION)
 	Events.sol_advanced.emit(current_sol)
 	Events.resources_updated.emit()
+	state_changed.emit()
 	Events.launch_finished.emit(true, current_sol, food_rations)
 	return result
 
-
-# =====================================================================
-# CÓDIGO EXISTENTE
-# =====================================================================
 
 # --- Fase 1: Equipar piezas y calcular trade-offs ---
 func equip_part(part: SpacecraftPart) -> bool:
@@ -234,7 +334,9 @@ func equip_part(part: SpacecraftPart) -> bool:
 	equipped_parts.append(part)
 	recalculate_engineering_stats()
 	Events.resources_updated.emit()
+	state_changed.emit()
 	return true
+
 
 func recalculate_engineering_stats() -> void:
 	total_mass = 1000.0
@@ -245,43 +347,48 @@ func recalculate_engineering_stats() -> void:
 		net_power += part.power_balance
 		science_score += part.science_value
 
+
 # --- Fase 2: Avanzar un Sol en Marte ---
 func advance_sol(ration_multiplier: float = 1.0, work_speed: float = 1.0) -> void:
-	current_sol += 1
+	var avance_soles := 2 if tiene_falla("mars_clock_drift") else 1
+	current_sol += avance_soles
+	orders_today = 0
+	turno_marte_usado = false
+	_deliver_pending()
+	_roll_random_faults()
 	food_rations -= 1.0 * ration_multiplier
 
-	# Verificar derrota por falta de comida
 	if food_rations <= 0.0:
+		state_changed.emit()
 		change_phase(MissionPhase.EVALUATION)
 		return
 
-	# Gestionar días sin señal
 	if blackout_days_left > 0:
 		blackout_days_left -= 1
-		if blackout_days_left == 0:
-			has_signal = true
+		if blackout_days_left == 0 and not tiene_falla("mars_antenna"):
+			signal_active = true
 			Events.signal_status_changed.emit(true)
 
-	# Avance de tus subordinados en la Tierra
 	var daily_cost := int(staff_count * 5 * work_speed)
 	if budget >= daily_cost:
 		budget -= daily_cost
-		# Sin señal, los subordinados trabajan con menor eficiencia por falta de supervisión
-		var actual_efficiency := crew_efficiency if has_signal else crew_efficiency * 0.4
-		# CAMBIO: antes aquí se sumaba a build_progress; ahora el avance es por pieza.
+		var actual_efficiency := crew_efficiency if signal_active else crew_efficiency * 0.4
 		_tick_fabrication(work_speed * actual_efficiency)
 
-	# Penalización por restricciones orbitales si se pasan los 60 días
 	if current_sol > MAX_SOLS:
 		orbital_alignment -= 15.0
 
 	Events.sol_advanced.emit(current_sol)
 	Events.resources_updated.emit()
+	state_changed.emit()
+
 
 func trigger_signal_blackout(days: int) -> void:
-	has_signal = false
+	signal_active = false
 	blackout_days_left = days
 	Events.signal_status_changed.emit(false)
+	state_changed.emit()
+
 
 # --- Fase 3 y 4: Validar si el diseño sobrevive la simulación ---
 func evaluate_launch_success() -> Dictionary:
@@ -304,129 +411,142 @@ func evaluate_launch_success() -> Dictionary:
 		"remaining_budget": budget
 	}
 
+
 func change_phase(new_phase: MissionPhase) -> void:
 	current_phase = new_phase
 	Events.phase_changed.emit(new_phase)
 
 
-# --- SISTEMA DE MANTENIMIENTO ---
-var turno_marte_usado: bool = false
-var fallas_activas: Array[Dictionary] = []
+# ============================================================
+# API de la tienda y mantenimiento
+# ============================================================
+func get_estado_accion() -> String:
+	if turno_marte_usado:
+		return "Acción física de hoy en Marte ya utilizada."
+	return "Sin acción física en curso en Marte."
 
-var catalogo_fallas: Array[Dictionary] = [
-	{
-		"id": "mars_antenna",
-		"ubicacion": "MARTE",
-		"titulo": "Antena Desalineada",
-		"desc": "Corta la señal con la Tierra hasta salir a recalibrar el plato.",
-		"costo_dinero": 0,
-		"costo_turno": true
-	},
-	{
-		"id": "mars_solar_dust",
-		"ubicacion": "MARTE",
-		"titulo": "Polvo en Paneles Solares",
-		"desc": "Modo ahorro: apaga la cámara de la Tierra y bloquea las Notas.",
-		"costo_dinero": 0,
-		"costo_turno": true
-	},
-	{
-		"id": "mars_telemetry",
-		"ubicacion": "MARTE",
-		"titulo": "Interferencia en Telemetría",
-		"desc": "Oculta el porcentaje real de avance del cohete.",
-		"costo_dinero": 50,
-		"costo_turno": false
-	},
-	{
-		"id": "mars_clock_drift",
-		"ubicacion": "MARTE",
-		"titulo": "Fallo en Reloj Orbital",
-		"desc": "Desincronización: cada jornada consume 2 Soles del plazo.",
-		"costo_dinero": 0,
-		"costo_turno": true
-	},
-	{
-		"id": "earth_crane",
-		"ubicacion": "TIERRA",
-		"titulo": "Grúa de Ensamblaje Averiada",
-		"desc": "Los chalanes no pueden mover piezas. Construcción detenida.",
-		"costo_dinero": 150,
-		"costo_turno": false
-	},
-	{
-		"id": "earth_weld",
-		"ubicacion": "TIERRA",
-		"titulo": "Soldadura Defectuosa en Tanque",
-		"desc": "Microfractura en el fuselaje. Riesgo crítico en el lanzamiento.",
-		"costo_dinero": 120,
-		"costo_turno": false
-	},
-	{
-		"id": "earth_burnout",
-		"ubicacion": "TIERRA",
-		"titulo": "Agotamiento de los Chalanes",
-		"desc": "El personal en Tierra está exhausto y avanza más lento.",
-		"costo_dinero": 100,
-		"costo_turno": false
-	},
-	{
-		"id": "earth_shortcircuit",
-		"ubicacion": "TIERRA",
-		"titulo": "Cortocircuito en Banco de Pruebas",
-		"desc": "El balance energético de la nave pierde -15 puntos.",
-		"costo_dinero": 90,
-		"costo_turno": false
-	},
-	{
-		"id": "earth_cleanroom",
-		"ubicacion": "TIERRA",
-		"titulo": "Polvo en la Sala Limpia",
-		"desc": "Contaminación en sensores: pierdes -5 puntos de ciencia por Sol.",
-		"costo_dinero": 75,
-		"costo_turno": false
-	}
-]
+
+func place_order(items: Dictionary) -> Dictionary:
+	if not signal_active:
+		return {"ok": false, "msg": "Sin señal: no puedes hacer pedidos."}
+	if orders_today >= Catalog.MAX_ORDERS_PER_SOL:
+		return {"ok": false, "msg": "Límite de pedidos por Sol alcanzado."}
+	var total := Catalog.order_total(items)
+	if total <= 0:
+		return {"ok": false, "msg": "El pedido está vacío."}
+	if budget < total:
+		return {"ok": false, "msg": "No tienes dinero suficiente"}
+
+	budget -= total
+	orders_today += 1
+	var deliver := current_sol + Catalog.order_delivery_days(items)
+	var clean := {}
+	for id in items:
+		if int(items[id]) > 0:
+			clean[id] = int(items[id])
+	pending_orders.append({"items": clean, "deliver_sol": deliver})
+	_register_calendar_event(deliver, "Llega pedido ($%d)" % total)
+	Events.resources_updated.emit()
+	state_changed.emit()
+	return {"ok": true, "msg": "Pedido confirmado. Llega en el Sol %d." % deliver,
+			"total": total, "deliver_sol": deliver}
+
+
+func buy_supply(id: String) -> Dictionary:
+	if not signal_active:
+		return {"ok": false, "msg": "Sin señal: no puedes comprar suministros."}
+	var s := Catalog.get_supply(id)
+	if s.is_empty():
+		return {"ok": false, "msg": "Suministro desconocido."}
+	var en_camino := 0
+	for p in pending_supplies:
+		if p["id"] == id:
+			en_camino += 1
+	if int(supply_stock.get(id, 0)) + en_camino >= int(s["max"]):
+		return {"ok": false, "msg": "Ya tienes el máximo de %s." % s["nombre"]}
+	if budget < int(s["costo"]):
+		return {"ok": false, "msg": "No tienes dinero suficiente"}
+
+	budget -= int(s["costo"])
+	var deliver := current_sol + int(s["dias"])
+	pending_supplies.append({"id": id, "deliver_sol": deliver})
+	_register_calendar_event(deliver, "Llega %s" % s["nombre"])
+	Events.resources_updated.emit()
+	state_changed.emit()
+	return {"ok": true, "msg": "%s en camino (Sol %d)." % [s["nombre"], deliver]}
+
+
+func _register_calendar_event(sol: int, texto: String) -> void:
+	if Events.has_signal("calendar_event_added"):
+		Events.calendar_event_added.emit(sol, texto)
+
+
+func _deliver_pending() -> void:
+	var keep_orders: Array = []
+	for o in pending_orders:
+		if int(o["deliver_sol"]) <= current_sol:
+			for id in o["items"]:
+				inventory[id] = int(inventory.get(id, 0)) + int(o["items"][id])
+		else:
+			keep_orders.append(o)
+	pending_orders = keep_orders
+
+	var keep_sup: Array = []
+	for p in pending_supplies:
+		if int(p["deliver_sol"]) <= current_sol:
+			supply_stock[p["id"]] = int(supply_stock.get(p["id"], 0)) + 1
+		else:
+			keep_sup.append(p)
+	pending_supplies = keep_sup
+
+
+func get_faults() -> Array:
+	return _faults
+
 
 func tiene_falla(id_falla: String) -> bool:
-	for f in fallas_activas:
-		if f["id"] == id_falla:
+	for f in _faults:
+		if f["id"] == id_falla and f["activa"]:
 			return true
 	return false
 
-func intentar_generar_falla() -> void:
-	turno_marte_usado = false
-	if fallas_activas.size() < 4 and randf() < 0.40:
-		var disponibles: Array[Dictionary] = []
-		for item in catalogo_fallas:
-			if not tiene_falla(item["id"]):
-				disponibles.append(item)
-		if disponibles.size() > 0:
-			var nueva: Dictionary = disponibles.pick_random().duplicate()
-			fallas_activas.append(nueva)
-			if nueva["id"] == "mars_antenna":
-				has_signal = false
-				Events.signal_status_changed.emit(false)
 
-func reparar_falla(indice: int) -> bool:
-	if indice < 0 or indice >= fallas_activas.size():
-		return false
-	var falla: Dictionary = fallas_activas[indice]
-	if falla["ubicacion"] == "TIERRA":
-		if not has_signal or budget < falla["costo_dinero"]:
-			return false
-		budget -= falla["costo_dinero"]
-	elif falla["ubicacion"] == "MARTE":
-		if falla["costo_turno"] and turno_marte_usado:
-			return false
-		if budget < falla["costo_dinero"]:
-			return false
-		budget -= falla["costo_dinero"]
-		if falla["costo_turno"]:
-			turno_marte_usado = true
-		if falla["id"] == "mars_antenna":
-			has_signal = true
-			Events.signal_status_changed.emit(true)
-	fallas_activas.remove_at(indice)
-	Events.resources_updated.emit()
-	return true
+func reparar_falla(id: String) -> bool:
+	for f in _faults:
+		if f["id"] == id and f["activa"]:
+			if f["ubicacion"] == "TIERRA":
+				if not signal_active or budget < int(f["costo_dinero"]):
+					return false
+				budget -= int(f["costo_dinero"])
+			elif f["ubicacion"] == "MARTE":
+				if bool(f["costo_turno"]) and turno_marte_usado:
+					return false
+				if budget < int(f["costo_dinero"]):
+					return false
+				budget -= int(f["costo_dinero"])
+				if bool(f["costo_turno"]):
+					turno_marte_usado = true
+				if f["id"] == "mars_antenna":
+					signal_active = true
+					Events.signal_status_changed.emit(true)
+			f["activa"] = false
+			Events.resources_updated.emit()
+			state_changed.emit()
+			return true
+	return false
+
+
+func _roll_random_faults() -> void:
+	var activas := 0
+	var disponibles: Array = []
+	for f in _faults:
+		if f["activa"]:
+			activas += 1
+		else:
+			disponibles.append(f)
+	if activas < 4 and disponibles.size() > 0 and randf() < 0.40:
+		var elegida: Dictionary = disponibles.pick_random()
+		elegida["activa"] = true
+		if elegida["id"] == "mars_antenna":
+			signal_active = false
+			Events.signal_status_changed.emit(false)

@@ -1,0 +1,314 @@
+[gd_scene format=3 uid="uid://de4aneunx5gta"]
+
+[ext_resource type="Theme" path="res://themes/ares_theme.tres" id="1_theme"]
+[ext_resource type="Script" uid="uid://cuv7po50w4wi7" path="res://scripts/tab_materials.gd" id="2_ep33q"]
+
+[node name="TabMaterials" type="Control" unique_id=851035634]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_ep33q")
+
+[node name="Margin" type="MarginContainer" parent="." unique_id=1281425076]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="Root" type="VBoxContainer" parent="Margin" unique_id=1439956339]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Header" type="VBoxContainer" parent="Margin/Root" unique_id=796834915]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="LblEyebrow" type="Label" parent="Margin/Root/Header" unique_id=560933573]
+layout_mode = 2
+theme_type_variation = &"LabelEyebrow"
+text = "01 / ADQUISICIÓN Y LOGÍSTICA"
+
+[node name="LblTitulo" type="Label" parent="Margin/Root/Header" unique_id=820601569]
+layout_mode = 2
+theme_type_variation = &"LabelTitle"
+text = "Materiales y circuitos"
+
+[node name="LblSubtitulo" type="Label" parent="Margin/Root/Header" unique_id=1998935225]
+layout_mode = 2
+theme_type_variation = &"LabelMuted"
+text = "Compra en la Tierra. Los insumos llegan después, no al instante."
+autowrap_mode = 3
+
+[node name="HSeparator" type="HSeparator" parent="Margin/Root" unique_id=368783321]
+layout_mode = 2
+
+[node name="PanelAvisoSenal" type="PanelContainer" parent="Margin/Root" unique_id=941567246]
+visible = false
+layout_mode = 2
+theme_type_variation = &"PanelAlert"
+
+[node name="LblAvisoSenal" type="Label" parent="Margin/Root/PanelAvisoSenal" unique_id=1804131540]
+layout_mode = 2
+theme_type_variation = &"LabelWarn"
+text = "SIN SEÑAL: no puedes hacer pedidos"
+
+[node name="Columnas" type="HBoxContainer" parent="Margin/Root" unique_id=1097244735]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+theme_override_constants/separation = 16
+
+[node name="PanelMateriales" type="PanelContainer" parent="Margin/Root/Columnas" unique_id=1784537458]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"PanelCard"
+
+[node name="Margin1" type="MarginContainer" parent="Margin/Root/Columnas/PanelMateriales" unique_id=747697515]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox1" type="VBoxContainer" parent="Margin/Root/Columnas/PanelMateriales/Margin1" unique_id=1772448875]
+layout_mode = 2
+
+[node name="LblColMateriales" type="Label" parent="Margin/Root/Columnas/PanelMateriales/Margin1/VBox1" unique_id=1018556059]
+layout_mode = 2
+theme_type_variation = &"LabelEyebrow"
+text = "MATERIALES"
+
+[node name="EncabezadoMat" type="HBoxContainer" parent="Margin/Root/Columnas/PanelMateriales/Margin1/VBox1" unique_id=109522475]
+layout_mode = 2
+
+[node name="EncInsumo" type="Label" parent="Margin/Root/Columnas/PanelMateriales/Margin1/VBox1/EncabezadoMat" unique_id=1081592964]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 4.0
+theme_type_variation = &"LabelMuted"
+text = "INSUMO"
+
+[node name="EncPrecio" type="Label" parent="Margin/Root/Columnas/PanelMateriales/Margin1/VBox1/EncabezadoMat" unique_id=1454009826]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+theme_type_variation = &"LabelMuted"
+text = "PRECIO"
+
+[node name="EncEntrega" type="Label" parent="Margin/Root/Columnas/PanelMateriales/Margin1/VBox1/EncabezadoMat" unique_id=1042412256]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+theme_type_variation = &"LabelMuted"
+text = "ENTREGA"
+
+[node name="EncCantidad" type="Label" parent="Margin/Root/Columnas/PanelMateriales/Margin1/VBox1/EncabezadoMat" unique_id=2037132851]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+theme_type_variation = &"LabelMuted"
+text = "CANTIDAD"
+
+[node name="ScrollMat" type="ScrollContainer" parent="Margin/Root/Columnas/PanelMateriales/Margin1/VBox1" unique_id=1704666379]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ListaMateriales" type="VBoxContainer" parent="Margin/Root/Columnas/PanelMateriales/Margin1/VBox1/ScrollMat" unique_id=784207585]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="PanelCircuitos" type="PanelContainer" parent="Margin/Root/Columnas" unique_id=2116149602]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"PanelCard"
+
+[node name="Margin2" type="MarginContainer" parent="Margin/Root/Columnas/PanelCircuitos" unique_id=141595966]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox2" type="VBoxContainer" parent="Margin/Root/Columnas/PanelCircuitos/Margin2" unique_id=836612246]
+layout_mode = 2
+
+[node name="LblColCircuitos" type="Label" parent="Margin/Root/Columnas/PanelCircuitos/Margin2/VBox2" unique_id=1859674692]
+layout_mode = 2
+theme_type_variation = &"LabelEyebrow"
+text = "CIRCUITOS"
+
+[node name="EncabezadoCir" type="HBoxContainer" parent="Margin/Root/Columnas/PanelCircuitos/Margin2/VBox2" unique_id=360609567]
+layout_mode = 2
+
+[node name="EncInsumo" type="Label" parent="Margin/Root/Columnas/PanelCircuitos/Margin2/VBox2/EncabezadoCir" unique_id=774339514]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 4.0
+theme_type_variation = &"LabelMuted"
+text = "INSUMO"
+
+[node name="EncPrecio" type="Label" parent="Margin/Root/Columnas/PanelCircuitos/Margin2/VBox2/EncabezadoCir" unique_id=518204351]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+theme_type_variation = &"LabelMuted"
+text = "PRECIO"
+
+[node name="EncEntrega" type="Label" parent="Margin/Root/Columnas/PanelCircuitos/Margin2/VBox2/EncabezadoCir" unique_id=1405073289]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+theme_type_variation = &"LabelMuted"
+text = "ENTREGA"
+
+[node name="EncCantidad" type="Label" parent="Margin/Root/Columnas/PanelCircuitos/Margin2/VBox2/EncabezadoCir" unique_id=1343924020]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+theme_type_variation = &"LabelMuted"
+text = "CANTIDAD"
+
+[node name="ScrollCir" type="ScrollContainer" parent="Margin/Root/Columnas/PanelCircuitos/Margin2/VBox2" unique_id=1607434729]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ListaCircuitos" type="VBoxContainer" parent="Margin/Root/Columnas/PanelCircuitos/Margin2/VBox2/ScrollCir" unique_id=1094708565]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="Inferior" type="HBoxContainer" parent="Margin/Root" unique_id=1439304338]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+theme_override_constants/separation = 16
+
+[node name="PanelResumen" type="PanelContainer" parent="Margin/Root/Inferior" unique_id=1669451610]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+theme_type_variation = &"PanelAlert"
+
+[node name="Margin3" type="MarginContainer" parent="Margin/Root/Inferior/PanelResumen" unique_id=1325033315]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="VBox3" type="VBoxContainer" parent="Margin/Root/Inferior/PanelResumen/Margin3" unique_id=1488728730]
+layout_mode = 2
+
+[node name="LblResumenTitulo" type="Label" parent="Margin/Root/Inferior/PanelResumen/Margin3/VBox3" unique_id=618207786]
+layout_mode = 2
+theme_type_variation = &"LabelEyebrow"
+text = "RESUMEN DEL PEDIDO"
+
+[node name="ScrollResumen" type="ScrollContainer" parent="Margin/Root/Inferior/PanelResumen/Margin3/VBox3" unique_id=1400983130]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="LblResumenDetalle" type="Label" parent="Margin/Root/Inferior/PanelResumen/Margin3/VBox3/ScrollResumen" unique_id=486850222]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Sin ítems seleccionados"
+autowrap_mode = 3
+
+[node name="Fila1" type="HBoxContainer" parent="Margin/Root/Inferior/PanelResumen/Margin3/VBox3" unique_id=1493168114]
+layout_mode = 2
+
+[node name="LblEntrega" type="Label" parent="Margin/Root/Inferior/PanelResumen/Margin3/VBox3/Fila1" unique_id=1890711593]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "ENTREGA: —"
+
+[node name="LblTotal" type="Label" parent="Margin/Root/Inferior/PanelResumen/Margin3/VBox3/Fila1" unique_id=2132288133]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"LabelWarn"
+text = "TOTAL: $0"
+
+[node name="LblMensaje" type="Label" parent="Margin/Root/Inferior/PanelResumen/Margin3/VBox3" unique_id=1097931152]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"LabelError"
+autowrap_mode = 3
+
+[node name="Fila2" type="HBoxContainer" parent="Margin/Root/Inferior/PanelResumen/Margin3/VBox3" unique_id=1399450910]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LblPedidosHoy" type="Label" parent="Margin/Root/Inferior/PanelResumen/Margin3/VBox3/Fila2" unique_id=1031245586]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"LabelMuted"
+text = "PEDIDOS HOY: 0 / 2"
+
+[node name="BtnLimpiar" type="Button" parent="Margin/Root/Inferior/PanelResumen/Margin3/VBox3/Fila2" unique_id=1943797165]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"ButtonGhost"
+text = "LIMPIAR"
+
+[node name="BtnConfirmar" type="Button" parent="Margin/Root/Inferior/PanelResumen/Margin3/VBox3/Fila2" unique_id=848905771]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"ButtonPrimary"
+disabled = true
+text = "CONFIRMAR PEDIDO >>"
+
+[node name="PanelAlmacen" type="PanelContainer" parent="Margin/Root/Inferior" unique_id=1846990879]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"PanelCard"
+
+[node name="Margin4" type="MarginContainer" parent="Margin/Root/Inferior/PanelAlmacen" unique_id=1398162212]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox4" type="VBoxContainer" parent="Margin/Root/Inferior/PanelAlmacen/Margin4" unique_id=50731925]
+layout_mode = 2
+
+[node name="LblAlmacenTitulo" type="Label" parent="Margin/Root/Inferior/PanelAlmacen/Margin4/VBox4" unique_id=436406144]
+layout_mode = 2
+theme_type_variation = &"LabelEyebrow"
+text = "EN ALMACÉN"
+
+[node name="ScrollAlmacen" type="ScrollContainer" parent="Margin/Root/Inferior/PanelAlmacen/Margin4/VBox4" unique_id=1643796520]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ListaAlmacen" type="VBoxContainer" parent="Margin/Root/Inferior/PanelAlmacen/Margin4/VBox4/ScrollAlmacen" unique_id=1415669507]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LblTransito" type="Label" parent="Margin/Root/Inferior/PanelAlmacen/Margin4/VBox4" unique_id=1403195708]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"LabelMuted"
+text = "Sin pedidos en tránsito"
+autowrap_mode = 3
