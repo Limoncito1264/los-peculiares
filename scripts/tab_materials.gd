@@ -24,6 +24,7 @@ var state                       # GameManager o MockState (duck typing)
 var _rows: Dictionary = {}      # id -> item_row
 var _almacen_labels: Dictionary = {}  # id -> Label
 var _panel_aviso: Control
+var _msg_was_block: bool = false      # el mensaje actual es el aviso de emergencia
 
 
 func _ready() -> void:
@@ -53,7 +54,6 @@ func _connect_state() -> void:
 	if state.has_signal("state_changed"):
 		state.connect("state_changed", _refresh)
 	var ev := get_node_or_null("/root/Events")
-	# Nombre de señal supuesto: ajústalo a tu Events.gd
 	if ev != null and ev.has_signal("sol_advanced"):
 		ev.connect("sol_advanced", _refresh)
 
@@ -88,6 +88,7 @@ func _collect_order() -> Dictionary:
 
 func _refresh(_arg = null) -> void:
 	var has_sig: bool = bool(state.signal_active)
+	var blocked: bool = state.is_blocked()
 	var orders_today: int = int(state.orders_today)
 
 	if _panel_aviso != null:
@@ -96,7 +97,7 @@ func _refresh(_arg = null) -> void:
 	lbl_pedidos_hoy.text = "PEDIDOS HOY: %d / %d" % [orders_today, Catalog.MAX_ORDERS_PER_SOL]
 
 	for id in _rows:
-		_rows[id].set_locked(not has_sig)
+		_rows[id].set_locked(not has_sig or blocked)
 
 	# Almacén
 	for id in _almacen_labels:
@@ -135,9 +136,20 @@ func _update_summary() -> void:
 		var days := Catalog.order_delivery_days(order)
 		lbl_entrega.text = "Entrega: Sol %d (en %d d)" % [int(state.current_sol) + days, days]
 
+	var blocked: bool = state.is_blocked()
 	btn_confirmar.disabled = order.is_empty() \
+			or blocked \
 			or not bool(state.signal_active) \
 			or int(state.orders_today) >= Catalog.MAX_ORDERS_PER_SOL
+
+	# Aviso persistente mientras haya emergencia en Marte
+	if blocked:
+		var e: Dictionary = state.get_blocking_event()
+		_set_msg("Emergencia en Marte (%s): resuélvela en Mantenimiento." % str(e.get("titulo", "")), "warn")
+		_msg_was_block = true
+	elif _msg_was_block:
+		_set_msg("", "ok")
+		_msg_was_block = false
 
 
 # ---------- Acciones ----------
