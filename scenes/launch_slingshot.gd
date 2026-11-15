@@ -8,7 +8,7 @@ extends Control
 
 signal finished(success: bool)
 
-enum State { AIMING, FLYING, RESULT }
+enum State { AIMING, FLYING, ORBITING, RESULT }
 
 # --- Mundo virtual (se escala a cualquier tamaño de ventana) ---
 const W: float = 1280.0
@@ -63,6 +63,14 @@ var _cinematic_started: bool = false
 var _result_title: String = ""
 var _result_sub: String = ""
 var _trail: PackedVector2Array = PackedVector2Array()
+var _orbit_timer: float = 0.0
+var _orbit_duration: float = 2.45
+var _orbit_angle: float = 0.0
+var _orbit_radius: float = MARS_ORBIT_R
+var _orbit_start_radius: float = MARS_ORBIT_R
+var _orbit_dir: float = 1.0
+var _orbit_omega: float = 4.5
+var _capture_speed: float = 0.0
 var _stars: PackedVector2Array = PackedVector2Array()
 
 var _pp: PackedVector2Array = PackedVector2Array()   # partículas: posición
@@ -162,10 +170,13 @@ func _step(p: Vector2, v: Vector2, flight_t: float) -> PackedVector2Array:
 ## "" = sigue volando; "mars", "mars_fast", "earth", "obstacle", "fuel", "out".
 func _check(p: Vector2, v: Vector2, step: int, flight_t: float) -> String:
 	var mc := _mars_pos_at(flight_t)
-	if p.distance_to(mc) < MARS_R:
+	var dist_m := p.distance_to(mc)
+	if dist_m <= MARS_ORBIT_R and v.length() <= MAX_CAPTURE_SPEED:
+		return "capture"
+	if dist_m < MARS_R:
 		if v.length() > MAX_CAPTURE_SPEED:
 			return "mars_fast"
-		return "mars"
+		return "capture"
 	if step > 5 and p.distance_to(EARTH_C) < EARTH_R:
 		return "earth"
 	for o in _obstacles_at(flight_t):
@@ -186,6 +197,28 @@ func _physics_process(_delta: float) -> void:
 	if _state == State.AIMING:
 		_sim_clock += DT
 		return
+	if _state == State.ORBITING:
+		_t += DT
+		_orbit_timer += DT
+		_steps += 1
+		var p_norm: float = clampf(_orbit_timer / _orbit_duration, 0.0, 1.0)
+		# Curva suave: primero estabiliza órbita (0..0.45) y luego desciende en espiral (0.45..1.0)
+		var ease_in: float = p_norm * p_norm * (3.0 - 2.0 * p_norm)
+		_orbit_radius = lerpf(_orbit_start_radius, MARS_R - 2.0, ease_in)
+		var omega_now: float = _orbit_omega * lerpf(1.0, 1.35, ease_in)
+		_orbit_angle += _orbit_dir * omega_now * DT
+		var mc_now: Vector2 = _mars_pos_at(_t)
+		var radial := Vector2(cos(_orbit_angle), sin(_orbit_angle))
+		var tangent := Vector2(-sin(_orbit_angle), cos(_orbit_angle)) * _orbit_dir
+		_pos = mc_now + radial * _orbit_radius
+		# Velocidad tangencial + componente radial de descenso para orientar la nave realista
+		var radial_inward := -radial * ((_orbit_start_radius - MARS_R) / _orbit_duration) * 1.4
+		_vel = tangent * (_orbit_radius * omega_now) + radial_inward
+		if _steps % 2 == 0:
+			_trail.append(_pos)
+		if p_norm >= 1.0:
+			_end_flight("mars")
+		return
 	if _state != State.FLYING:
 		return
 	var res: PackedVector2Array = _step(_pos, _vel, _t)
@@ -198,7 +231,9 @@ func _physics_process(_delta: float) -> void:
 	var why: String = _check(_pos, _vel, _steps, _t)
 	if why == "" and _explode_at > 0.0 and _t >= _explode_at:
 		why = "explosion"
-	if why != "":
+	if why == "capture":
+		_begin_mars_orbit()
+	elif why != "":
 		_end_flight(why)
 
 
@@ -221,23 +256,45 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
+func _begin_mars_orbit() -> void:
+	_state = State.ORBITING
+	_orbit_timer = 0.0
+	_capture_speed = _vel.length()
+	var mc := _mars_pos_at(_t)
+	var rel := _pos - mc
+	_orbit_start_radius = maxf(rel.length(), MARS_R + 10.0)
+	_orbit_radius = _orbit_start_radius
+	_orbit_angle = rel.angle()
+	# Conserva el sentido de giro (horario o antihorario) según la trayectoria de entrada
+	var cross := rel.x * _vel.y - rel.y * _vel.x
+	_orbit_dir = 1.0 if cross >= 0.0 else -1.0
+	# ~1.85 vueltas completas durante el descenso orbital
+	_orbit_omega = (TAU * 1.85) / _orbit_duration
+	_burst(_pos, AresUI.TEAL, 18)
+	if SoundManager:
+		SoundManager.play("orbit", -1.5)
+
+
 func _end_flight(why: String) -> void:
 	_state = State.RESULT
 	_success = why == "mars"
 	var listos := GameManager.systems_ready() if GameManager else 4
 	var total := GameManager.ROCKET_PARTS.size() if GameManager else 4
 	var mc := _mars_pos_at(_t)
+	var spd_show := _capture_speed if _capture_speed > 0.0 else _vel.length()
 	match why:
 		"mars":
 			if practice and listos < total:
 				_result_title = "TRAYECTORIA VÁLIDA · NAVE INCOMPLETA"
-				_result_sub = "Órbita lograda en %.1f s (%.0f u/s), pero faltan %d/%d sistemas." % [_t, _vel.length(), total - listos, total]
-				_burst(mc, AresUI.AMBER, 38)
+				_result_sub = "Órbita y descenso logrados en %.1f s (%.0f u/s), pero faltan %d/%d sistemas." % [_t, spd_show, total - listos, total]
+				_burst(_pos, AresUI.AMBER, 38)
 			else:
-				_result_title = "¡LLEGASTE A MARTE!"
-				_result_sub = "Inserción orbital lograda en %.1f s a %.0f u/s." % [_t, _vel.length()]
-				_burst(mc, AresUI.TEAL, 44)
+				_result_title = "¡ATERRIZAJE EN MARTE COMPLETADO!"
+				_result_sub = "Inserción orbital y descenso logrados en %.1f s (entrada a %.0f u/s)." % [_t, spd_show]
+				_burst(_pos, AresUI.TEAL, 44)
 		"mars_fast":
+			if SoundManager:
+				SoundManager.play("explosion", -1.0)
 			_result_title = "EXCESO DE VELOCIDAD EN INSERCIÓN"
 			_result_sub = "Entraste a %.0f u/s (máx. %.0f u/s). Baja potencia o usa arco alto." % [_vel.length(), MAX_CAPTURE_SPEED]
 			_burst(_pos, Color("#E05A47"), 40)
@@ -250,6 +307,8 @@ func _end_flight(why: String) -> void:
 			_result_sub = "Corrige el ángulo o aprovecha el movimiento para esquivarlos."
 			_burst(_pos, Color("#E05A47"), 38)
 		"explosion":
+			if SoundManager:
+				SoundManager.play("explosion", 1.0)
 			_result_title = "¡EXPLOSIÓN DE LA NAVE!"
 			_result_sub = "%s (T+%.1f s)." % [_explode_reason, _t]
 			_burst(_pos, Color("#E05A47"), 56)
@@ -352,6 +411,8 @@ func _fire() -> void:
 	if not practice and _btn_close:
 		_btn_close.visible = false
 	_roll_explosion_risk()
+	if SoundManager:
+		SoundManager.play("launch", -1.0)
 
 
 func _roll_explosion_risk() -> void:
@@ -370,14 +431,11 @@ func _roll_explosion_risk() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	if rng.randf() < risk:
-		var en_despegue := rng.randf() < 0.45
-		_explode_at = rng.randf_range(0.55, 1.35) if en_despegue else rng.randf_range(2.4, 5.2)
+		_explode_at = rng.randf_range(0.18, 0.26)
 		if listos < total:
 			_explode_reason = "FALLO POR SISTEMAS SIN FABRICAR (%d/%d)" % [listos, total]
-		elif en_despegue:
-			_explode_reason = "SOBREPRESIÓN EN IGNICIÓN DURANTE EL DESPEGUE"
 		else:
-			_explode_reason = "RUPTURA DEL PROPULSOR EN PLENO TRÁNSITO"
+			_explode_reason = "SOBREPRESIÓN EN IGNICIÓN DURANTE EL DESPEGUE"
 
 
 # ------------------------------------------------------------------
@@ -454,7 +512,7 @@ func _draw() -> void:
 			if _pulling:
 				rocket_pos = _pull_pos
 				rocket_angle = (ANCHOR - _pull_pos).angle()
-		State.FLYING:
+		State.FLYING, State.ORBITING:
 			rocket_pos = _pos
 			rocket_angle = _vel.angle()
 		State.RESULT:
@@ -468,7 +526,7 @@ func _draw() -> void:
 		draw_line(POST_L, ANCHOR + Vector2(0, 10), band_col, 3.0)
 		draw_line(POST_R, ANCHOR + Vector2(0, 10), band_col, 3.0)
 		if show_rocket:
-			_draw_rocket(rocket_pos, rocket_angle, _state == State.FLYING)
+			_draw_rocket(rocket_pos, rocket_angle, _state == State.FLYING or _state == State.ORBITING)
 
 	# Partículas
 	for i in _pp.size():
@@ -567,6 +625,8 @@ func _draw_hud(font: Font) -> void:
 	var hint: String = "Anticipa la órbita de Marte, esquiva los desechos y entra bajo %.0f u/s." % MAX_CAPTURE_SPEED
 	if _state == State.FLYING:
 		hint = "En vuelo hacia órbita marciana..."
+	elif _state == State.ORBITING:
+		hint = "Captura orbital confirmada · Descendiendo en espiral hacia Marte..."
 	elif _state == State.RESULT and practice:
 		hint = "Resultado del intento."
 	draw_string(font, Vector2(28, 62), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, AresUI.MUTED)
