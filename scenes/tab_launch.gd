@@ -191,12 +191,12 @@ func _refresh() -> void:
 	elif falla_soft:
 		_btn_sim.disabled = true
 		_btn_sim.text = "SERVIDOR FUERA DE LÍNEA"
-		_btn_launch.disabled = listos < total
+		_btn_launch.disabled = false
 		_lbl_msg.text = "Falla de software: servidor de simulación reiniciándose."
 	else:
 		_btn_sim.disabled = false
 		_btn_sim.text = "SIMULAR VUELO  >>"
-		_btn_launch.disabled = listos < total
+		_btn_launch.disabled = false
 		_lbl_msg.text = "Faltan sistemas por fabricar. Revisa el modo simulación." if listos < total \
 			else "Sistemas completos. Puedes revisar el lanzamiento."
 

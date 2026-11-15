@@ -355,7 +355,20 @@ func recalculate_engineering_stats() -> void:
 
 # --- Fase 2: Avanzar un Sol en Marte ---
 func advance_sol(ration_multiplier: float = 1.0, work_speed: float = 1.0) -> void:
+	if current_sol > MAX_SOLS:
+		return
 	current_sol += 1
+	if current_sol > MAX_SOLS:
+		current_sol = MAX_SOLS + 1
+		Events.sol_advanced.emit(current_sol)
+		Events.resources_updated.emit()
+		state_changed.emit()
+		var tree := get_tree()
+		if tree and tree.root and not tree.root.has_node("EndingCutsceneLayer"):
+			var Cutscene := load("res://scenes/ending_cutscene.gd")
+			if Cutscene:
+				Cutscene.play(self, "timeout")
+		return
 	orders_today = 0          # reinicia el límite diario de pedidos
 	if tiene_falla("t_proveedor"):
 		_delay_pending_deliveries()
@@ -403,6 +416,7 @@ func advance_sol(ration_multiplier: float = 1.0, work_speed: float = 1.0) -> voi
 	Events.sol_advanced.emit(current_sol)
 	Events.resources_updated.emit()
 	state_changed.emit()
+
 
 
 func trigger_signal_blackout(days: int) -> void:
