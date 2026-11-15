@@ -1,0 +1,222 @@
+[gd_scene format=3 uid="uid://b5ly3ky56bggg"]
+
+[ext_resource type="Script" uid="uid://by710vgspmydu" path="res://scenes/Lore/lore.gd" id="1_fkbqi"]
+[ext_resource type="AudioStream" uid="uid://by8oodfgi23j7" path="res://themes/Sonidotecla.wav" id="2_508fi"]
+[ext_resource type="Script" uid="uid://dmt8ph4xcla1" path="res://scenes/menu/estrellas.gd" id="2_kot5a"]
+[ext_resource type="Script" uid="uid://gtml6drtcbgg" path="res://scenes/menu/tierrapixel.gd" id="3_508fi"]
+[ext_resource type="FontFile" uid="uid://byadn4840qcdv" path="res://themes/slkscr.ttf" id="4_gw0ot"]
+[ext_resource type="FontFile" uid="uid://bsttun4iu1y6r" path="res://themes/IBMPlexMono-Regular.ttf" id="5_kot5a"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_21004"]
+content_margin_left = 50.0
+content_margin_top = 50.0
+content_margin_right = 50.0
+content_margin_bottom = 50.0
+bg_color = Color(0.047058824, 0.08627451, 0.14901961, 0.9019608)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.49803922, 0.8627451, 0.79607844, 1)
+corner_detail = 1
+shadow_color = Color(0.49803922, 0.8627451, 0.79607844, 0.2509804)
+shadow_size = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_508fi"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kot5a"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gw0ot"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_kot5a"]
+
+[node name="Lore" type="Control" unique_id=118707501]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_fkbqi")
+metadata/_edit_use_anchors_ = true
+
+[node name="SonidoTecla" type="AudioStreamPlayer" parent="." unique_id=115212226]
+stream = ExtResource("2_508fi")
+volume_db = -10.0
+
+[node name="Fondo" type="ColorRect" parent="." unique_id=43947410]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.039215688, 0.05490196, 0.101960786, 1)
+metadata/_edit_use_anchors_ = true
+
+[node name="Estrellas" type="Control" parent="." unique_id=118757922]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_kot5a")
+metadata/_edit_use_anchors_ = true
+
+[node name="Tierra" type="Control" parent="." unique_id=2122146426]
+custom_minimum_size = Vector2(160, 160)
+anchors_preset = 0
+offset_left = 200.0
+offset_top = 220.0
+offset_right = 360.0
+offset_bottom = 380.0
+rotation = -0.00035191583
+mouse_filter = 2
+script = ExtResource("3_508fi")
+celdas = 20
+semilla = 3
+
+[node name="Marte" type="Control" parent="." unique_id=1072215786]
+custom_minimum_size = Vector2(980, 980)
+layout_mode = 1
+anchor_right = 0.020833334
+anchor_bottom = 0.037037037
+offset_left = 1250.0
+offset_top = 120.0
+offset_right = 2190.0
+offset_bottom = 1060.0
+mouse_filter = 2
+script = ExtResource("3_508fi")
+celdas = 70
+tamano_pixel = 14
+color_base = Color(0.5411765, 0.23137255, 0.13333334, 1)
+color_relieve = Color(0.8509804, 0.4392157, 0.22745098, 1)
+semilla = 5
+metadata/_edit_use_anchors_ = true
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=149757114]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 160
+theme_override_constants/margin_top = 60
+theme_override_constants/margin_right = 160
+theme_override_constants/margin_bottom = 60
+metadata/_edit_use_anchors_ = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1059470167]
+layout_mode = 2
+
+[node name="Titulo" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1089641055]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9098039, 0.72156864, 0.41960785, 1)
+theme_override_fonts/font = ExtResource("4_gw0ot")
+theme_override_font_sizes/font_size = 64
+text = "HOUSTON, TENEMOS UN PROBLEMITA"
+horizontal_alignment = 1
+
+[node name="Espacio" type="Control" parent="MarginContainer/VBoxContainer" unique_id=219783423]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CajaDialogo" type="PanelContainer" parent="MarginContainer/VBoxContainer" unique_id=1085867466]
+custom_minimum_size = Vector2(0, 520)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_21004")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/CajaDialogo" unique_id=1818928286]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Encabezado" type="Label" parent="MarginContainer/VBoxContainer/CajaDialogo/VBoxContainer" unique_id=29934514]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.49803922, 0.8627451, 0.79607844, 1)
+theme_override_fonts/font = ExtResource("5_kot5a")
+theme_override_font_sizes/font_size = 22
+text = "TRANSMISIÓN ENTRANTE / TIERRA >> MARTE"
+
+[node name="Texto" type="RichTextLabel" parent="MarginContainer/VBoxContainer/CajaDialogo/VBoxContainer" unique_id=2001014438]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/default_color = Color(0.84705883, 0.8784314, 0.9098039, 1)
+theme_override_fonts/normal_font = ExtResource("5_kot5a")
+theme_override_fonts/bold_font = ExtResource("5_kot5a")
+theme_override_fonts/bold_italics_font = ExtResource("5_kot5a")
+theme_override_fonts/italics_font = ExtResource("5_kot5a")
+theme_override_fonts/mono_font = ExtResource("5_kot5a")
+theme_override_font_sizes/normal_font_size = 28
+theme_override_font_sizes/bold_font_size = 28
+theme_override_font_sizes/bold_italics_font_size = 28
+theme_override_font_sizes/italics_font_size = 28
+theme_override_font_sizes/mono_font_size = 28
+text = "¡Felicidades, comandante!
+Después de meses de entrenamiento y preparación, finalmente has sido seleccionado para una de las misiones espaciales más importantes de la humanidad: una expedición a Marte.
+Tu trabajo parecía bastante sencillo: llegar a la base, realizar tus actividades y regresar a casa después de cumplir tu misión.
+---
+Y, sorprendentemente, todo salió bien.
+Llegaste a Marte sin contratiempos, la base estaba en perfectas condiciones y los suministros parecían suficientes. Por primera vez en mucho tiempo, algo en esta misión estaba funcionando como debía.
+Pero, como era de esperarse, la tranquilidad no duró demasiado.
+---
+Al preparar tu regreso a la Tierra, descubriste que tu nave tenía algunos problemas técnicos. Y cuando decimos algunos, queremos decir que básicamente es un montón de metal bastante caro que ya no puede volar.
+Inmediatamente contactaste con la Tierra para informar de la situación y solicitar una solución.
+---
+La respuesta fue tranquilizadora: no te preocupes, comandante, enviaremos un equipo especializado para construir un nuevo cohete.
+¡Excelente! Problema resuelto.
+...¿Verdad?
+---
+Resulta que, por alguna razón que nadie se ha molestado en explicarte, ahora eres el responsable de supervisar absolutamente todo el proyecto.
+Tienes que conseguir los materiales, administrar el presupuesto, coordinar a los trabajadores, mantener la base en funcionamiento y asegurarte de que el cohete esté listo para despegar.
+¿Y tu equipo? Bueno, digamos que su experiencia espacial no necesariamente incluye saber cómo hacer las cosas.
+---
+Por si fuera poco, la Tierra ya estableció una fecha límite: dentro de 60 días enviarán una nave para recogerte. Ese es el tiempo máximo que tienes para preparar todo.
+Aunque, si consigues construir tu cohete antes, podrás adelantar tu regreso y dejar atrás este pequeño desastre espacial.
+Ahora depende de ti conseguir que ese montón de piezas termine pareciéndose a un cohete funcional antes de que llegue la fecha programada.
+---
+La Tierra confía en ti.
+Tu equipo también.
+Aunque, siendo sinceros, probablemente deberías preocuparte por eso último.
+Buena suerte, comandante. La Tierra cuenta contigo. Aunque, sinceramente, nosotros tampoco sabemos qué estamos haciendo."
+scroll_active = false
+
+[node name="Pie" type="HBoxContainer" parent="MarginContainer/VBoxContainer/CajaDialogo/VBoxContainer" unique_id=1174882875]
+layout_mode = 2
+theme_override_constants/separation = 35
+
+[node name="Pagina" type="Label" parent="MarginContainer/VBoxContainer/CajaDialogo/VBoxContainer/Pie" unique_id=165024076]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56078434, 0.6392157, 0.72156864, 1)
+theme_override_fonts/font = ExtResource("5_kot5a")
+theme_override_font_sizes/font_size = 20
+text = "01 / 07"
+
+[node name="Relleno" type="Control" parent="MarginContainer/VBoxContainer/CajaDialogo/VBoxContainer/Pie" unique_id=417289141]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BotonSaltar" type="Button" parent="MarginContainer/VBoxContainer/CajaDialogo/VBoxContainer/Pie" unique_id=2146077154]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56078434, 0.6392157, 0.72156864, 1)
+theme_override_fonts/font = ExtResource("5_kot5a")
+theme_override_font_sizes/font_size = 22
+text = "SALTAR INTRO"
+flat = true
+
+[node name="BotonContinuar" type="Button" parent="MarginContainer/VBoxContainer/CajaDialogo/VBoxContainer/Pie" unique_id=1017631628]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_fonts/font = ExtResource("5_kot5a")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_508fi")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_kot5a")
+theme_override_styles/hover = SubResource("StyleBoxFlat_gw0ot")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_kot5a")
+text = "CONTINUAR >>"
+flat = true
+metadata/_edit_use_anchors_ = true
