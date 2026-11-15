@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://blkkhpnwflrvk"]
+
+[ext_resource type="Theme" uid="uid://bciujnggjpuo7" path="res://themes/ares_theme.tres" id="1_theme"]
+[ext_resource type="Script" uid="uid://dl3jm46tvyfs8" path="res://scripts/fault_card.gd" id="2_gxrnk"]
+
+[node name="FaultCard" type="PanelContainer" unique_id=882544479]
+size_flags_horizontal = 3
+theme = ExtResource("1_theme")
+theme_type_variation = &"PanelCard"
+script = ExtResource("2_gxrnk")
+
+[node name="Margin" type="MarginContainer" parent="." unique_id=309367232]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="Fila" type="HBoxContainer" parent="Margin" unique_id=2112617339]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="VBoxTexto" type="VBoxContainer" parent="Margin/Fila" unique_id=1438119145]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LblTitulo" type="Label" parent="Margin/Fila/VBoxTexto" unique_id=47984281]
+unique_name_in_owner = true
+layout_mode = 2
+text = "[MARTE] Falla"
+
+[node name="LblDesc" type="Label" parent="Margin/Fila/VBoxTexto" unique_id=2131253373]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"LabelMuted"
+text = "Descripción"
+autowrap_mode = 3
+
+[node name="BtnReparar" type="Button" parent="Margin/Fila" unique_id=1301422442]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+theme_type_variation = &"ButtonGhost"
+text = "Reparar"

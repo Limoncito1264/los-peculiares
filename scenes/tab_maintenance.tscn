@@ -1,9 +1,177 @@
-[gd_scene format=3 uid="uid://bf2igdilksub8"]
+[gd_scene format=3 uid="uid://xgtqk38h0b8n"]
 
-[node name="Control" type="Control" unique_id=1222752718]
+[ext_resource type="Theme" uid="uid://bciujnggjpuo7" path="res://themes/ares_theme.tres" id="1_theme"]
+[ext_resource type="Script" uid="uid://b75cuipnuoovr" path="res://scripts/tab_maintenance.gd" id="2_hc08w"]
+
+[node name="TabMaintenance" type="Control" unique_id=1889186285]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_hc08w")
+
+[node name="Margin" type="MarginContainer" parent="." unique_id=551165970]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="Root" type="VBoxContainer" parent="Margin" unique_id=756857044]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Header" type="VBoxContainer" parent="Margin/Root" unique_id=469222184]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="LblEyebrow" type="Label" parent="Margin/Root/Header" unique_id=1826195216]
+layout_mode = 2
+theme_type_variation = &"LabelEyebrow"
+text = "02 / RIESGOS E INFRAESTRUCTURA"
+
+[node name="LblTitulo" type="Label" parent="Margin/Root/Header" unique_id=742832581]
+layout_mode = 2
+theme_type_variation = &"LabelTitle"
+text = "Mantén la base en pie"
+
+[node name="LblSubtitulo" type="Label" parent="Margin/Root/Header" unique_id=1536533556]
+layout_mode = 2
+theme_type_variation = &"LabelMuted"
+text = "Sin energía o señal, no puedes coordinar a tu equipo en la Tierra."
+autowrap_mode = 3
+
+[node name="HSeparator" type="HSeparator" parent="Margin/Root" unique_id=1565595928]
+layout_mode = 2
+
+[node name="LblEstadoTurno" type="Label" parent="Margin/Root" unique_id=1723073022]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Acción física en Marte hoy: DISPONIBLE"
+
+[node name="PanelEventos" type="PanelContainer" parent="Margin/Root" unique_id=1350643616]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+theme_type_variation = &"PanelAlert"
+
+[node name="Margin2" type="MarginContainer" parent="Margin/Root/PanelEventos" unique_id=1387396809]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="VBox2" type="VBoxContainer" parent="Margin/Root/PanelEventos/Margin2" unique_id=441444536]
+layout_mode = 2
+
+[node name="LblEventosTitulo" type="Label" parent="Margin/Root/PanelEventos/Margin2/VBox2" unique_id=1920842921]
+layout_mode = 2
+theme_type_variation = &"LabelWarn"
+text = "[!] EVENTOS ALEATORIOS"
+
+[node name="LblEventosSub" type="Label" parent="Margin/Root/PanelEventos/Margin2/VBox2" unique_id=1283473674]
+layout_mode = 2
+theme_type_variation = &"LabelMuted"
+text = "Las averías no esperan. Repáralas desde aquí."
+
+[node name="ScrollEventos" type="ScrollContainer" parent="Margin/Root/PanelEventos/Margin2/VBox2" unique_id=1033662887]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ListaFallas" type="VBoxContainer" parent="Margin/Root/PanelEventos/Margin2/VBox2/ScrollEventos" unique_id=1535712215]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="LblSuministrosTitulo" type="Label" parent="Margin/Root" unique_id=2086468613]
+layout_mode = 2
+theme_type_variation = &"LabelEyebrow"
+text = "SUMINISTROS DE SEGURIDAD"
+
+[node name="PanelSuministros" type="PanelContainer" parent="Margin/Root" unique_id=948929297]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+theme_type_variation = &"PanelCard"
+
+[node name="Margin3" type="MarginContainer" parent="Margin/Root/PanelSuministros" unique_id=2103155745]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox3" type="VBoxContainer" parent="Margin/Root/PanelSuministros/Margin3" unique_id=953436725]
+layout_mode = 2
+
+[node name="EncabezadoSum" type="HBoxContainer" parent="Margin/Root/PanelSuministros/Margin3/VBox3" unique_id=1716324853]
+layout_mode = 2
+
+[node name="EncSuministro" type="Label" parent="Margin/Root/PanelSuministros/Margin3/VBox3/EncabezadoSum" unique_id=1512875163]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 4.0
+theme_type_variation = &"LabelMuted"
+text = "SUMINISTRO"
+
+[node name="EncReserva" type="Label" parent="Margin/Root/PanelSuministros/Margin3/VBox3/EncabezadoSum" unique_id=367816550]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+theme_type_variation = &"LabelMuted"
+text = "RESERVA"
+
+[node name="EncCoste" type="Label" parent="Margin/Root/PanelSuministros/Margin3/VBox3/EncabezadoSum" unique_id=1154565433]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+theme_type_variation = &"LabelMuted"
+text = "COSTE / U"
+
+[node name="EncEntrega" type="Label" parent="Margin/Root/PanelSuministros/Margin3/VBox3/EncabezadoSum" unique_id=1771190249]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+theme_type_variation = &"LabelMuted"
+text = "ENTREGA"
+
+[node name="EncAcción" type="Label" parent="Margin/Root/PanelSuministros/Margin3/VBox3/EncabezadoSum" unique_id=193401683]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+theme_type_variation = &"LabelMuted"
+text = "ACCIÓN"
+
+[node name="ScrollSum" type="ScrollContainer" parent="Margin/Root/PanelSuministros/Margin3/VBox3" unique_id=1079091142]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ListaSuministros" type="VBoxContainer" parent="Margin/Root/PanelSuministros/Margin3/VBox3/ScrollSum" unique_id=1368782946]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="LblMensaje" type="Label" parent="Margin/Root" unique_id=301145]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"LabelError"
+autowrap_mode = 3
+
+[node name="LblPie" type="Label" parent="Margin/Root" unique_id=537188701]
+layout_mode = 2
+theme_type_variation = &"LabelMuted"
+text = "SEGURIDAD DE LA BASE = SUMINISTROS + DINERO + PREVENCIÓN"
+autowrap_mode = 3
