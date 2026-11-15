@@ -101,6 +101,8 @@ func workers_busy() -> int:
 	for i in ROCKET_PARTS.size():
 		if part_state[i] == PartState.IN_PROGRESS:
 			n += part_workers[i]
+	if _fault_sys != null:
+		n += _fault_sys.workers_busy()
 	return n
 
 
@@ -138,7 +140,18 @@ func start_fabrication(index: int, workers: int) -> String:
 	part_state[index] = PartState.IN_PROGRESS
 	part_workers[index] = workers
 	part_days_left[index] = float(fabrication_days(index, workers))
+	var dia_pieza := mini(current_sol + ceili(part_days_left[index]), MAX_SOLS)
+	var nombre_pieza := str(ROCKET_PARTS[index].get("nombre", ROCKET_PARTS[index].get("name", "Pieza")))
+	GestorCalendario.obtener().cancelar_por_dato("fabricacion_idx", index)
+	GestorCalendario.obtener().registrar_evento(
+		dia_pieza,
+		"Pieza lista: %s" % nombre_pieza,
+		GestorCalendario.TIPO_FABRICACION,
+		"Fabricación con %d trabajadores" % workers,
+		{"fabricacion_idx": index}
+	)
 	Events.part_state_changed.emit(index)
+	state_changed.emit()
 	Events.resources_updated.emit()
 	state_changed.emit()
 	return ""
@@ -150,7 +163,7 @@ func fabrication_block_reason() -> String:
 		return "Grúa de ensamblaje averiada: la construcción está detenida. Repárala en Mantenimiento."
 	var sueldos := int(staff_count * 5)
 	if budget < sueldos:
-		return "Sin dinero para pagar al personal (%d CR por sol): la fabricación está detenida." % sueldos
+		return "Sin dinero para pagar al personal (%d USD por sol): la fabricación está detenida." % sueldos
 	if not signal_active:
 		return "Sin señal: el personal trabaja al 40%."
 	if tiene_falla("earth_burnout"):
@@ -179,6 +192,7 @@ func _tick_fabrication(speed: float) -> void:
 			part_days_left[i] = 0.0
 			part_state[i] = PartState.READY
 			part_workers[i] = 0
+			GestorCalendario.obtener().cancelar_por_dato("fabricacion_idx", i)
 			_sync_build_progress()
 			Events.part_state_changed.emit(i)
 
@@ -426,11 +440,20 @@ func buy_supply(id: String) -> Dictionary:
 
 
 func _register_calendar_event(sol: int, texto: String) -> void:
+	var dia_valido := clampi(sol, 1, MAX_SOLS)
+	GestorCalendario.obtener().registrar_evento(
+		dia_valido,
+		texto,
+		GestorCalendario.TIPO_MATERIAL,
+		"Entrega programada",
+		{"entrega_sol": dia_valido}
+	)
 	if Events.has_signal("calendar_event_added"):
 		Events.calendar_event_added.emit(sol, texto)
 
 
 func _deliver_pending() -> void:
+	GestorCalendario.obtener().cancelar_por_dato("entrega_sol", current_sol)
 	var keep_orders: Array = []
 	for o in pending_orders:
 		if int(o["deliver_sol"]) <= current_sol:
@@ -461,12 +484,15 @@ func tiene_falla(id_falla: String) -> bool:
 
 
 func get_workers_info() -> Dictionary:
-	return _fault_sys.workers_info()
+	return {"total": staff_count, "busy": workers_busy(), "free": workers_free()}
 
 
 func _tick_faults() -> void:
 	for id in _fault_sys.tick_day(current_sol):
 		Events.adverse_event_triggered.emit(str(id))
+	for f in _fault_sys.get_faults():
+		if str(f.get("tipo", "")) == "tierra" and not bool(f.get("en_reparacion", false)):
+			GestorCalendario.obtener().cancelar_por_dato("reparacion_id", str(f.get("id", "")))
 
 
 ## Devuelve {ok:bool, msg:String}.
@@ -495,7 +521,19 @@ func reparar_falla(id: String) -> Dictionary:
 		return {"ok": false, "msg": _blocked_msg()}
 	if not signal_active:
 		return {"ok": false, "msg": "Sin señal: no puedes dar órdenes a la Tierra."}
-	var res := _fault_sys.start_earth_repair(id)
+	var res := _fault_sys.start_earth_repair(id, workers_free())
+	if bool(res.get("ok", false)):
+		var dia_rep := mini(current_sol + int(f.get("dias_rep", 1)), MAX_SOLS)
+		var titulo_falla := str(f.get("titulo", id))
+		GestorCalendario.obtener().cancelar_por_dato("reparacion_id", id)
+		GestorCalendario.obtener().registrar_evento(
+			dia_rep,
+			"Reparado: %s" % titulo_falla,
+			GestorCalendario.TIPO_MANTENIMIENTO,
+			"Reparación en base terrestre",
+			{"reparacion_id": id}
+		)
+	Events.resources_updated.emit()
 	state_changed.emit()
 	return res
 

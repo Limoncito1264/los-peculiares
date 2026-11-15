@@ -82,7 +82,7 @@ func workers_info() -> Dictionary:
 	return {"total": workers_total, "busy": workers_busy(), "free": workers_free()}
 
 
-func start_earth_repair(id: String) -> Dictionary:
+func start_earth_repair(id: String, free_override: int = -1) -> Dictionary:
 	var f := find_fault(id)
 	if f.is_empty() or f["tipo"] != "tierra":
 		return {"ok": false, "msg": "Falla desconocida."}
@@ -92,7 +92,8 @@ func start_earth_repair(id: String) -> Dictionary:
 		return {"ok": false, "msg": "Esa falla ya no está activa."}
 	if f["en_reparacion"]:
 		return {"ok": false, "msg": "Ya hay un trabajador asignado."}
-	if workers_free() <= 0:
+	var libres := free_override if free_override >= 0 else workers_free()
+	if libres <= 0:
 		return {"ok": false, "msg": "No hay trabajadores libres."}
 	f["en_reparacion"] = true
 	f["restante"] = int(f["dias_rep"])

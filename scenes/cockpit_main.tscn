@@ -41,7 +41,7 @@ layout_mode = 2
 
 [node name="LblTitulo" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaArriba/CajaLogo" unique_id=1169762557]
 layout_mode = 2
-text = "ARES"
+text = "ODYSSEY-60"
 
 [node name="LblSubtitulo" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaArriba/CajaLogo" unique_id=931260975]
 layout_mode = 2
@@ -68,7 +68,7 @@ text = "SIGUIENTE SOL >>"
 
 [node name="LblProximoEvento" type="Label" parent="VBoxPrincipal/HeaderSuperior/FilaArriba/CentroBotonSol" unique_id=1181082967]
 layout_mode = 2
-text = "SOL 3 * Inspeccion de la base"
+text = ""
 horizontal_alignment = 1
 
 [node name="CajaDinero" type="VBoxContainer" parent="VBoxPrincipal/HeaderSuperior/FilaArriba" unique_id=1328109876]

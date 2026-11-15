@@ -4,18 +4,93 @@ extends Control
 
 # --- Plano de ensamblaje: retícula + silueta de la nave (placeholder hasta tener los sprites) ---
 class Plano extends Control:
-	const SHIP_ORIGIN := Vector2(65, 55)                 # [Figma] posición del esquema en el plano
-	const R_NOSE := Rect2(85.8, 15.6, 62.4, 71.76)       # [Figma] nose-cone
-	const R_FUSELAGE := Rect2(73.32, 87.36, 87.36, 177.84)
-	const R_BOOSTER_L := Rect2(18.72, 127.92, 62.4, 165.36)
-	const R_BOOSTER_R := Rect2(152.88, 127.92, 62.4, 165.36)
-	const R_ENGINE := Rect2(87.36, 255.84, 59.28, 62.4)
-
 	# Orden: fuselaje, motor, depósito, guiado
 	var ready_flags: Array[bool] = [false, false, false, false]
+	var _tex: ImageTexture
+
+	const SPRITE := [
+		"....................................",
+		".................OO.................",
+		"................OAAO................",
+		"................OAaO................",
+		"...............OAAAaO...............",
+		"...............OAAAaO...............",
+		"..............OAAAAaaO..............",
+		"..............OAAAAaaO..............",
+		".............OAAAAAAaaO.............",
+		".............OAAAAAAaaO.............",
+		".............OOOOOOOOOO.............",
+		".............OWWWWWWSSO.............",
+		".............OWWWWWWSSO.............",
+		"............OWWWWWWWWSSO............",
+		"............OWWWWWWWWSSO............",
+		"............OWWOOOOOOWSO............",
+		"............OWOgCcCCgOSO............",
+		"........OO..OWOCCCCCOOSO..OO........",
+		".......OAAO.OWOCCCCgOOSO.OAAO.......",
+		".......OAaO.OWWOOOOOOWSO.OAaO.......",
+		"......OAAAaOOWWWWWWWWSSOOAAAaO......",
+		"......OOOOOOOWWWWWWWWSSOOOOOOO......",
+		"......OWWWSSOWWOOOOOOWSOWWWSSO......",
+		"......OWOOSSOWOAWWWWgOSOWOOSSO......",
+		"......OWOOSSOWWOOOOOOWSOWOOSSO......",
+		"......OWWWSSOWWWWWWWWSSOWWWSSO......",
+		"......OWWWSSOWWWWWWWWSSOWWWSSO......",
+		"......OWWWSSOWWWWWWWWSSOWWWSSO......",
+		"......OWOOSSOWWWWWWWWSSOWOOSSO......",
+		"......OWWWSSOWOgGGGGgOSOWWWSSO......",
+		"......OWWWSSOWWWWWWWWSSOWWWSSO......",
+		"......OWWWSSOWWWWWWWWSSOWWWSSO......",
+		"......OWWWSSOWWWWWWWWSSOWWWSSO......",
+		"......OOOOOOOOOOOOOOOOOOOOOOOO......",
+		".....OOGGGGOO.OOGGGGOO.OOGGGGOO.....",
+		"....OOGGOOGGOOOGGGGGGOOOGGOOGGOO....",
+		"....OGGO..OGGOOGGGGGGOOGGO..OGGO....",
+		"....OOOO..OOOOOOOOOOOOOOOO..OOOO....",
+		"...............OOAAOO...............",
+		"..............OOGGGGOO..............",
+		"..............OOOOOOOO..............",
+	]
 
 	func _init() -> void:
 		custom_minimum_size = Vector2(360, 436)
+		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+
+	func _generar_textura() -> ImageTexture:
+		var pal := {
+			"O": Color("#0B111A"),
+			"A": Color("#F2B84B"),
+			"a": Color("#C48428"),
+			"W": Color("#E6ECE8"),
+			"S": Color("#9EB0B8"),
+			"G": Color("#526880"),
+			"g": Color("#7C8FA6"),
+			"C": Color("#4CE0B3"),
+			"c": Color("#B8FFF0"),
+		}
+		var h := SPRITE.size()
+		var w := 36
+		var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+		img.fill(Color(0, 0, 0, 0))
+		for y in range(h):
+			var row: String = SPRITE[y]
+			for x in range(w):
+				var ch := row[x]
+				if ch != ".":
+					var visible := false
+					if y <= 10:
+						visible = ready_flags[3]
+					elif y >= 34 and x >= 14 and x <= 21:
+						visible = ready_flags[1]
+					elif (y <= 33 and (x <= 11 or x >= 24)) or (y >= 34 and (x <= 13 or x >= 22)):
+						visible = ready_flags[2]
+					elif y >= 21 and y <= 33 and (x == 12 or x == 23):
+						visible = ready_flags[0] or ready_flags[2]
+					else:
+						visible = ready_flags[0]
+					if visible:
+						img.set_pixel(x, y, pal[ch])
+		return ImageTexture.create_from_image(img)
 
 	func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, size), AresUI.BG_INSET)
@@ -23,20 +98,12 @@ class Plano extends Control:
 			draw_rect(Rect2(x, 0, 1, size.y), AresUI.GRID)
 		for y in range(0, int(size.y), 24):
 			draw_rect(Rect2(0, y, size.x, 1), AresUI.GRID)
-		# [Inferido] fuselaje->main-fuselage, motor->engine, depósito->boosters, guiado->nose-cone
-		_parte(R_FUSELAGE, ready_flags[0], AresUI.TEXT)
-		_parte(R_ENGINE, ready_flags[1], AresUI.MUTED)
-		_parte(R_BOOSTER_L, ready_flags[2], AresUI.TEXT)
-		_parte(R_BOOSTER_R, ready_flags[2], AresUI.TEXT)
-		_parte(R_NOSE, ready_flags[3], AresUI.AMBER)
+		_tex = _generar_textura()
+		var escala := 6.0
+		var tam := Vector2(36.0 * escala, float(SPRITE.size()) * escala)
+		var pos := Vector2((size.x - tam.x) * 0.5, (size.y - tam.y) * 0.5 + 4.0)
+		draw_texture_rect(_tex, Rect2(pos, tam), false)
 		draw_rect(Rect2(Vector2.ZERO, size), AresUI.BORDER, false, 1.0)
-
-	func _parte(r: Rect2, construida: bool, color: Color) -> void:
-		var rr := Rect2(r.position + SHIP_ORIGIN, r.size)
-		if construida:
-			draw_rect(rr, color)
-		else:
-			draw_rect(rr, AresUI.BORDER.lightened(0.35), false, 1.0)
 
 
 var selected: int = 0
@@ -116,7 +183,7 @@ func _ready() -> void:
 func _build_plano() -> Control:
 	_plano = Plano.new()
 	_plano.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	var top := AresUI.label("ARES-01 / PLANO DE REFERENCIA", 10, AresUI.TEAL)
+	var top := AresUI.label("ODYSSEY-60 / PLANO DE REFERENCIA", 10, AresUI.TEAL)
 	top.position = Vector2(15, 13)
 	_plano.add_child(top)
 	var bottom := AresUI.label("VISTA FRONTAL / DISEÑO OBJETIVO", 10, AresUI.MUTED)

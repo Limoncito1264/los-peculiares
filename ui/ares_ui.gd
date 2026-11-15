@@ -1,6 +1,6 @@
 class_name AresUI
 extends RefCounted
-## Colores, fuentes y fábricas de widgets del diseño ARES (Figma NASA).
+## Colores, fuentes y fábricas de widgets del diseño ODYSSEY-60 (Figma NASA).
 ## Todo se construye por código: no necesita Theme ni recursos extra.
 
 # --- Paleta [Figma] ---

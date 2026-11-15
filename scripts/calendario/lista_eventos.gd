@@ -10,15 +10,14 @@ var _fondo: StyleBoxFlat
 
 func _ready() -> void:
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	size_flags_vertical = Control.SIZE_EXPAND_FILL
-	size_flags_stretch_ratio = 0.46
+	size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	custom_minimum_size = Vector2.ZERO
 	add_theme_constant_override("separation", 0)
 	_fondo = Gestor.estilo_panel()
 	_fondo.set_content_margin_all(0)
 	var panel := get_parent() as BoxContainer
 	if panel != null:
-		panel.add_theme_constant_override("separation", 14)
+		panel.add_theme_constant_override("separation", 8)
 	_armar()
 	_conectar()
 	_reconstruir()
@@ -36,7 +35,7 @@ func _armar() -> void:
 	var margen := MarginContainer.new()
 	margen.name = "MargenEventos"
 	margen.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	margen.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margen.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	margen.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	margen.add_theme_constant_override("margin_left", 12)
 	margen.add_theme_constant_override("margin_right", 12)
@@ -47,7 +46,7 @@ func _armar() -> void:
 	var interior := VBoxContainer.new()
 	interior.name = "InteriorEventos"
 	interior.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	interior.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	interior.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	interior.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	interior.add_theme_constant_override("separation", 10)
 	margen.add_child(interior)
@@ -67,15 +66,6 @@ func _armar() -> void:
 	_tarjetas.add_theme_constant_override("separation", 10)
 	interior.add_child(_tarjetas)
 
-	var espaciador := Control.new()
-	espaciador.name = "EspaciadorNota"
-	espaciador.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	espaciador.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	interior.add_child(espaciador)
-
-	var pie := _texto("Cada pedido y trabajo agrega su fecha al calendario.", 11, Gestor.COLOR_NOTA, false)
-	pie.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	interior.add_child(pie)
 
 
 func _conectar() -> void:
@@ -150,7 +140,7 @@ func _crear_tarjeta(ranura: Dictionary) -> PanelContainer:
 	var color_titulo := Gestor.COLOR_TEXTO
 	if titulo_apagado:
 		color_titulo.a = 0.45
-	var etiqueta_titulo := _texto(titulo, 12, color_titulo, not titulo_apagado)
+	var etiqueta_titulo := _texto(titulo, 14, color_titulo, not titulo_apagado)
 	etiqueta_titulo.clip_text = true
 	etiqueta_titulo.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	caja.add_child(etiqueta_titulo)
@@ -161,8 +151,8 @@ func _linea_dia(dia_texto: String) -> HBoxContainer:
 	var fila := HBoxContainer.new()
 	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fila.add_theme_constant_override("separation", 0)
-	var prefijo := _texto("DÍA ", 11, Gestor.COLOR_NOTA, false)
-	var numero := _texto(dia_texto, 11, Gestor.COLOR_ORO, true)
+	var prefijo := _texto("DÍA ", 12, Gestor.COLOR_NOTA, false)
+	var numero := _texto(dia_texto, 12, Gestor.COLOR_ORO, true)
 	prefijo.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	numero.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	prefijo.vertical_alignment = VERTICAL_ALIGNMENT_CENTER

@@ -69,27 +69,6 @@ func _envolver() -> void:
 	_contenido.add_child(cabecera)
 	_contenido.move_child(cabecera, 0)
 
-	var pie := VBoxContainer.new()
-	pie.add_theme_constant_override("separation", 2)
-	pie.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-
-	var fila := HBoxContainer.new()
-	fila.add_theme_constant_override("separation", 8)
-	var etiqueta := _texto("DÍA ACTUAL", 11, Gestor.COLOR_TEXTO_SUAVE, false)
-	etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_numero_actual = _texto(str(GameManager.current_sol), 18, Gestor.COLOR_HOY_TEXTO, true)
-	_numero_actual.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_numero_actual.size_flags_horizontal = Control.SIZE_SHRINK_END
-	fila.add_child(etiqueta)
-	fila.add_child(_numero_actual)
-	pie.add_child(fila)
-
-	pie.add_child(_texto("LÍMITE / DÍA 60", 12, Gestor.COLOR_CORAL, true))
-	var aviso := _texto("El cohete debe llegar ANTES de agotar la comida.", 11, Gestor.COLOR_NOTA, false)
-	aviso.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	pie.add_child(aviso)
-	_contenido.add_child(pie)
-
 	if mostrar_botones_de_prueba:
 		_crear_botones_prueba(_contenido)
 
