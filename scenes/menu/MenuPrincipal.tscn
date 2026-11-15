@@ -1,0 +1,103 @@
+[gd_scene format=3 uid="uid://c2eg08n86yh14"]
+
+[ext_resource type="FontFile" uid="uid://byadn4840qcdv" path="res://themes/slkscr.ttf" id="1_0xxp7"]
+[ext_resource type="Script" uid="uid://dptlaivqpj6hn" path="res://scenes/menu/menu_principal.gd" id="1_ai864"]
+[ext_resource type="Script" uid="uid://dmt8ph4xcla1" path="res://scenes/menu/estrellas.gd" id="2_iklql"]
+[ext_resource type="Script" uid="uid://gtml6drtcbgg" path="res://scenes/menu/tierrapixel.gd" id="3_kp2bo"]
+
+[node name="MenuPrincipal" type="Control" unique_id=777406548]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ai864")
+metadata/_edit_use_anchors_ = true
+
+[node name="Fondo" type="ColorRect" parent="." unique_id=2077540448]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.039215688, 0.05490196, 0.101960786, 1)
+metadata/_edit_use_anchors_ = true
+
+[node name="Estrellas" type="Control" parent="." unique_id=1629835603]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_iklql")
+metadata/_edit_use_anchors_ = true
+
+[node name="Tierra" type="Control" parent="." unique_id=1019350616]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 235.0
+offset_top = 500.0
+offset_right = 275.0
+offset_bottom = 540.0
+script = ExtResource("3_kp2bo")
+celdas = 20
+semilla = 3
+
+[node name="Marte" type="Control" parent="." unique_id=176639413]
+layout_mode = 1
+anchor_right = 0.020833334
+anchor_bottom = 0.037037037
+offset_left = 1110.0
+offset_top = 500.0
+offset_right = 1110.0
+offset_bottom = 500.0
+script = ExtResource("3_kp2bo")
+celdas = 70
+tamano_pixel = 14
+color_base = Color(0.5411765, 0.23137255, 0.13333334, 1)
+color_relieve = Color(0.8509804, 0.4392157, 0.22745098, 1)
+semilla = 5
+metadata/_edit_use_anchors_ = true
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1133018096]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+rotation = 0.00074692856
+metadata/_edit_use_anchors_ = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer" unique_id=1131618746]
+layout_mode = 2
+theme_override_constants/separation = 40
+
+[node name="Titulo" type="Label" parent="CenterContainer/VBoxContainer" unique_id=804202550]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9098039, 0.72156864, 0.41960785, 1)
+theme_override_colors/font_outline_color = Color(0.039215688, 0.019607844, 0.101960786, 1)
+theme_override_constants/line_spacing = 2
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("1_0xxp7")
+theme_override_font_sizes/font_size = 140
+text = "ODYSSEY-60"
+horizontal_alignment = 1
+
+[node name="Subtitulo" type="Label" parent="CenterContainer/VBoxContainer" unique_id=966716051]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.56078434, 0.6392157, 0.72156864, 1)
+theme_override_fonts/font = ExtResource("1_0xxp7")
+theme_override_font_sizes/font_size = 32
+text = "L.P."
+horizontal_alignment = 1
+
+[node name="BotonJugar" type="Button" parent="CenterContainer/VBoxContainer" unique_id=628422671]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_0xxp7")
+theme_override_font_sizes/font_size = 40
+text = "PRESIONA PARA JUGAR"
