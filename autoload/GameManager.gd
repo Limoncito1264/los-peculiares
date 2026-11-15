@@ -15,7 +15,7 @@ var signal_active: bool = true
 var blackout_days_left: int = 0
 
 # --- Administración de Recursos y Subordinados ---
-var budget: int = 1000
+var budget: int = 100000
 var staff_count: int = 12
 var crew_efficiency: float = 1.0
 var build_progress: float = 0.0
@@ -35,15 +35,16 @@ enum PartState { PENDING, IN_PROGRESS, READY }
 
 const FLIGHT_DAYS: int = 8
 
+# Claves = ids de res://data/shop_catalog.gd (lo que llega a inventory al recibir un pedido).
 const MATERIAL_INFO := {
-	"aluminio":   ["Aluminio 6061", "kg"],
-	"titanio":    ["Titanio Ti-6Al", "kg"],
-	"acero":      ["Acero inoxidable", "kg"],
-	"fibra":      ["Fibra de carbono", "kg"],
-	"c_guiado":   ["Circuito de guiado", "u"],
-	"c_potencia": ["Módulo de potencia", "u"],
-	"c_enlace":   ["Módulo de enlace", "u"],
-	"c_termico":  ["Sensor térmico", "u"],
+	"aluminio":   ["Aluminio estructural", "kg"],
+	"acero":      ["Acero inoxidable",     "kg"],
+	"titanio":    ["Titanio aeroespacial", "kg"],
+	"fibra_c":    ["Fibra de carbono",     "kg"],
+	"c_guiado":   ["Circuito de guiado",   "u"],
+	"c_potencia": ["Módulo de potencia",   "u"],
+	"c_enlace":   ["Módulo de enlace",     "u"],
+	"c_termico":  ["Sensor térmico",       "u"],
 }
 
 const ROCKET_PARTS := [
@@ -57,14 +58,11 @@ const ROCKET_PARTS := [
 		"recipe": {"acero": 30, "c_termico": 1}, "work": 24,
 		"fault": "no hay reserva de combustible"},
 	{"id": "guiado", "name": "Sistema de guiado",
-		"recipe": {"fibra": 10, "c_enlace": 2}, "work": 18,
+		"recipe": {"fibra_c": 10, "c_enlace": 2}, "work": 18,
 		"fault": "navegación sin configurar"},
 ]
 
-var inventory: Dictionary = {
-	"aluminio": 0, "titanio": 0, "acero": 0, "fibra": 0,
-	"c_guiado": 0, "c_potencia": 0, "c_enlace": 0, "c_termico": 0,
-}
+var inventory: Dictionary = {}   # lo llena _init_shop_state() con los ids del catálogo
 var part_state: Array[int] = [0, 0, 0, 0]
 var part_workers: Array[int] = [0, 0, 0, 0]
 var part_days_left: Array[float] = [0.0, 0.0, 0.0, 0.0]
@@ -225,6 +223,20 @@ func start_fabrication(index: int, workers: int) -> String:
 	Events.part_state_changed.emit(index)
 	Events.resources_updated.emit()
 	state_changed.emit()
+	return ""
+
+
+# Motivo por el que la fabricación en curso no avanza (o avanza más lento). "" = avanza normal.
+func fabrication_block_reason() -> String:
+	if tiene_falla("earth_crane"):
+		return "Grúa de ensamblaje averiada: la construcción está detenida. Repárala en Mantenimiento."
+	var sueldos := int(staff_count * 5)
+	if budget < sueldos:
+		return "Sin dinero para pagar al personal (%d CR por sol): la fabricación está detenida." % sueldos
+	if not signal_active:
+		return "Sin señal: el personal trabaja al 40%."
+	if tiene_falla("earth_burnout"):
+		return "Personal agotado: la fabricación avanza a la mitad de velocidad."
 	return ""
 
 
