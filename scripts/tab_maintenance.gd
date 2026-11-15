@@ -40,7 +40,6 @@ func _connect_state() -> void:
 	if state.has_signal("state_changed"):
 		state.connect("state_changed", _refresh)
 	var ev := get_node_or_null("/root/Events")
-	# Nombre de señal supuesto: ajústalo a tu Events.gd
 	if ev != null and ev.has_signal("sol_advanced"):
 		ev.connect("sol_advanced", _refresh)
 
@@ -56,22 +55,35 @@ func _build_supplies() -> void:
 
 ## Parámetro opcional para aceptar señales de Events con 1 argumento.
 func _refresh(_arg = null) -> void:
+	var blocked: bool = state.is_blocked()
+	var has_sig: bool = bool(state.signal_active)
+	var workers: Dictionary = state.get_workers_info()
+
 	# Estado de acción física en Marte
-	if state.has_method("get_estado_accion"):
-		lbl_estado_turno.text = str(state.get_estado_accion())
-	else:
-		lbl_estado_turno.text = "Sin acción física en curso en Marte."
+	lbl_estado_turno.text = str(state.get_estado_accion())
+	lbl_estado_turno.theme_type_variation = &"LabelError" if blocked else &"LabelOk"
 
-	var locked: bool = not bool(state.signal_active)
-
-	# Fallas: se reconstruyen (son pocas, 9 máx.)
+	# Fallas: se reconstruyen (son pocas) separadas por origen
 	for c in lista_fallas.get_children():
+		lista_fallas.remove_child(c)
 		c.queue_free()
+
+	var marte: Array = []
+	var tierra: Array = []
 	for f in state.get_faults():
-		var card = FaultCardScene.instantiate()
-		lista_fallas.add_child(card)
-		card.setup(f)
-		card.repair_requested.connect(_on_repair)
+		if str(f.get("tipo", "tierra")) == "marte":
+			marte.append(f)
+		else:
+			tierra.append(f)
+
+	_add_header("EVENTOS EN MARTE (emergencias: bloquean todo)")
+	for f in marte:
+		_add_card(f, false)
+
+	_add_header("EVENTOS EN LA TIERRA · TRABAJADORES: %d libres / %d" % [workers["free"], workers["total"]])
+	for f in tierra:
+		var sin_trabajador: bool = int(workers["free"]) <= 0 and not bool(f.get("en_reparacion", false))
+		_add_card(f, blocked or not has_sig or sin_trabajador)
 
 	# Suministros: se actualizan in-place
 	for id in _supply_rows:
@@ -80,13 +92,35 @@ func _refresh(_arg = null) -> void:
 		for p in state.pending_supplies:
 			if p["id"] == id:
 				en_camino += 1
-		_supply_rows[id].update_state(reserva, en_camino, locked)
+		_supply_rows[id].update_state(reserva, en_camino, blocked or not has_sig)
+
+
+func _add_header(texto: String) -> void:
+	var lbl := Label.new()
+	lbl.text = texto
+	lbl.theme_type_variation = &"LabelEyebrow"
+	lista_fallas.add_child(lbl)
+
+
+func _add_card(f: Dictionary, locked: bool) -> void:
+	var card = FaultCardScene.instantiate()
+	lista_fallas.add_child(card)
+	card.setup(f)
+	card.set_locked(locked)
+	card.repair_requested.connect(_on_repair)
 
 
 func _on_repair(fault_id: String) -> void:
 	var r = state.reparar_falla(fault_id)
-	var ok: bool = r if typeof(r) == TYPE_BOOL else bool(r.get("ok", true)) if typeof(r) == TYPE_DICTIONARY else true
-	_set_msg("Falla reparada." if ok else "No se pudo reparar la falla.", "ok" if ok else "error")
+	var ok := false
+	var msg := ""
+	if typeof(r) == TYPE_DICTIONARY:
+		ok = bool(r.get("ok", false))
+		msg = str(r.get("msg", ""))
+	else:
+		ok = bool(r)
+		msg = "Falla reparada." if ok else "No se pudo reparar la falla."
+	_set_msg(msg, "ok" if ok else "error")
 	_refresh()
 
 

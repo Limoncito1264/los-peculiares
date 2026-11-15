@@ -5,6 +5,7 @@ extends RefCounted
 ## Implementa EXACTAMENTE la misma API que debe tener GameManager.
 
 const Catalog = preload("res://data/shop_catalog.gd")
+const FaultSys = preload("res://data/fault_system.gd")
 
 signal state_changed
 
@@ -12,7 +13,10 @@ const REQUIRED_PROPS := [
 	"budget", "current_sol", "signal_active", "orders_today",
 	"inventory", "pending_orders", "supply_stock", "pending_supplies",
 ]
-const REQUIRED_METHODS := ["place_order", "buy_supply", "get_faults", "reparar_falla"]
+const REQUIRED_METHODS := [
+	"place_order", "buy_supply", "get_faults", "reparar_falla",
+	"get_workers_info", "is_blocked", "get_blocking_event",
+]
 
 var budget: int = 5000
 var current_sol: int = 1
@@ -24,17 +28,7 @@ var supply_stock: Dictionary = {}     # id -> reserva actual
 var pending_supplies: Array = []      # [{id:String, deliver_sol:int}]
 var calendar_events: Array = []       # [{sol:int, texto:String}]
 
-var _faults: Array = [
-	{"id": "f1", "titulo": "Fuga de oxígeno",         "desc": "Presión cayendo en el módulo habitable.", "prob": 0.05, "activa": true},
-	{"id": "f2", "titulo": "Falla eléctrica",         "desc": "Cortocircuito en el bus principal.",      "prob": 0.08, "activa": false},
-	{"id": "f3", "titulo": "Pérdida de comunicación", "desc": "Antena de enlace desalineada.",           "prob": 0.07, "activa": false},
-	{"id": "f4", "titulo": "Tormenta de polvo",       "desc": "Paneles solares cubiertos de polvo.",     "prob": 0.10, "activa": true},
-	{"id": "f5", "titulo": "Sobrecalentamiento",      "desc": "Radiador térmico fuera de rango.",        "prob": 0.06, "activa": false},
-	{"id": "f6", "titulo": "Fuga de agua",            "desc": "Pérdida en el reciclador de agua.",       "prob": 0.04, "activa": false},
-	{"id": "f7", "titulo": "Falla de software",       "desc": "Computadora de a bordo reiniciándose.",   "prob": 0.09, "activa": false},
-	{"id": "f8", "titulo": "Daño estructural",        "desc": "Micrometeorito impactó el casco.",        "prob": 0.03, "activa": false},
-	{"id": "f9", "titulo": "Falla de sensores",       "desc": "Lecturas ambientales inconsistentes.",    "prob": 0.07, "activa": false},
-]
+var _fault_sys := FaultSys.new()
 
 
 func _init() -> void:
@@ -42,6 +36,8 @@ func _init() -> void:
 		inventory[it["id"]] = 0
 	for s in Catalog.SUPPLIES:
 		supply_stock[s["id"]] = 0
+	# Para ver algo al probar: una falla terrestre ya activa
+	_fault_sys.force_activate("t_software")
 
 
 ## Devuelve GameManager si existe y cumple la API; si no, un MockState local.
@@ -61,25 +57,73 @@ static func resolve(from: Node):
 	return MockState.new()
 
 
+# ---------- Eventos aleatorios ----------
+
+func is_blocked() -> bool:
+	return _fault_sys.has_mars_event()
+
+
+func get_blocking_event() -> Dictionary:
+	return _fault_sys.get_blocking_event()
+
+
+func _blocked_msg() -> String:
+	var e := _fault_sys.get_blocking_event()
+	return "Emergencia en Marte (%s): resuélvela primero." % str(e.get("titulo", ""))
+
+
 func get_estado_accion() -> String:
-	return "Sin acción física en curso en Marte."
+	var e := _fault_sys.get_blocking_event()
+	if e.is_empty():
+		return "Sin acción física en curso en Marte."
+	return "EMERGENCIA EN MARTE: %s. Todo lo demás está bloqueado hasta resolverla." % e["titulo"]
 
 
 func get_faults() -> Array:
-	return _faults
+	return _fault_sys.get_faults()
 
 
-func reparar_falla(id: String) -> bool:
-	for f in _faults:
-		if f["id"] == id and f["activa"]:
-			f["activa"] = false
-			state_changed.emit()
-			return true
-	return false
+func get_workers_info() -> Dictionary:
+	return _fault_sys.workers_info()
 
+
+func reparar_falla(id: String) -> Dictionary:
+	var f := _fault_sys.find_fault(id)
+	if f.is_empty():
+		return {"ok": false, "msg": "Falla desconocida."}
+
+	if f["tipo"] == "marte":
+		if not f["activa"]:
+			return {"ok": false, "msg": "Ese evento ya no está activo."}
+		var costo := int(f["costo"])
+		if budget < costo:
+			return {"ok": false, "msg": "No tienes dinero suficiente"}
+		budget -= costo
+		_fault_sys.resolve_mars(id)
+		advance_sol()   # día perdido
+		return {"ok": true, "msg": "Emergencia resuelta (-$%d). Perdiste el día: ahora es el Sol %d." % [costo, current_sol]}
+
+	if is_blocked():
+		return {"ok": false, "msg": _blocked_msg()}
+	if not signal_active:
+		return {"ok": false, "msg": "Sin señal: no puedes dar órdenes a la Tierra."}
+	var res := _fault_sys.start_earth_repair(id)
+	state_changed.emit()
+	return res
+
+
+## Solo para pruebas: p. ej. state.forzar_evento("m_oxigeno")
+func forzar_evento(id: String) -> void:
+	_fault_sys.force_activate(id)
+	state_changed.emit()
+
+
+# ---------- Tienda ----------
 
 ## items: {id: qty}. Devuelve {ok:bool, msg:String, total:int, deliver_sol:int}
 func place_order(items: Dictionary) -> Dictionary:
+	if is_blocked():
+		return {"ok": false, "msg": _blocked_msg()}
 	if not signal_active:
 		return {"ok": false, "msg": "Sin señal: no puedes hacer pedidos."}
 	if orders_today >= Catalog.MAX_ORDERS_PER_SOL:
@@ -112,6 +156,8 @@ func get_supply_in_transit(id: String) -> int:
 
 
 func buy_supply(id: String) -> Dictionary:
+	if is_blocked():
+		return {"ok": false, "msg": _blocked_msg()}
 	if not signal_active:
 		return {"ok": false, "msg": "Sin señal: no puedes comprar suministros."}
 	var s := Catalog.get_supply(id)
@@ -133,6 +179,7 @@ func buy_supply(id: String) -> Dictionary:
 func advance_sol() -> void:
 	current_sol += 1
 	orders_today = 0
+	_fault_sys.tick_day(current_sol)
 	var keep_orders: Array = []
 	for o in pending_orders:
 		if int(o["deliver_sol"]) <= current_sol:
