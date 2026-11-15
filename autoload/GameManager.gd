@@ -17,7 +17,7 @@ var signal_active: bool = true        # Estado de comunicación Tierra-Marte (an
 var blackout_days_left: int = 0
 
 # --- Administración de Recursos y Subordinados ---
-var budget: int = 100000
+var budget: int = 62000
 var staff_count: int = 12
 var crew_efficiency: float = 1.0
 var build_progress: float = 0.0
@@ -82,6 +82,44 @@ var _fault_sys := FaultSys.new()
 func _ready() -> void:
 	_init_shop_state()
 
+func reset_game() -> void:
+	current_phase = MissionPhase.DESIGN
+	current_sol = 1
+	food_rations = 60.0
+	signal_active = true
+	blackout_days_left = 0
+
+	budget = 62000
+	staff_count = 12
+	crew_efficiency = 1.0
+	build_progress = 0.0
+
+	equipped_parts.clear()
+	total_mass = 1000.0
+	net_power = 0.0
+	science_score = 0
+	launch_capacity = 3000.0
+	orbital_alignment = 100.0
+
+	inventory.clear()
+	supply_stock.clear()
+	_init_shop_state()
+
+	part_state = [0, 0, 0, 0]
+	part_workers = [0, 0, 0, 0]
+	part_days_left = [0.0, 0.0, 0.0, 0.0]
+
+	orders_today = 0
+	pending_orders.clear()
+	pending_supplies.clear()
+
+	_fault_sys = FaultSys.new()
+
+	Events.sol_advanced.emit(current_sol)
+	Events.resources_updated.emit()
+	Events.signal_status_changed.emit(true)
+	state_changed.emit()
+
 
 func _init_shop_state() -> void:
 	for it in Catalog.all_items():
@@ -118,6 +156,17 @@ func has_materials(index: int) -> bool:
 	return true
 
 
+func is_signal_online() -> bool:
+	return signal_active and not tiene_falla("t_antena")
+
+
+func max_assignable_workers() -> int:
+	var free := workers_free()
+	if tiene_falla("t_control"):
+		return mini(free, 4)
+	return free
+
+
 func fabrication_days(index: int, workers: int) -> int:
 	var work := float(ROCKET_PARTS[index]["work"])
 	return maxi(1, ceili(work / float(maxi(workers, 1))))
@@ -128,10 +177,16 @@ func start_fabrication(index: int, workers: int) -> String:
 		return "Pieza inválida."
 	if part_state[index] != PartState.PENDING:
 		return "Esa pieza ya está en fabricación o terminada."
+	if not is_signal_online():
+		return "Pérdida de comunicación: no puedes enviar órdenes a la Tierra."
+	if tiene_falla("t_energia"):
+		return "Corte de energía en la Tierra: la planta está sin electricidad."
+	if tiene_falla("t_software"):
+		return "Falla de software: servidor de diseño fuera de línea."
 	if workers < 1:
 		return "Asigna al menos un trabajador."
-	if workers > workers_free():
-		return "No hay suficientes trabajadores libres."
+	if workers > max_assignable_workers():
+		return "Falla en centro de control: máximo %d trabajadores por pieza." % max_assignable_workers()
 	if not has_materials(index):
 		return "Faltan insumos. Compra y recibe los materiales antes de fabricar."
 	var recipe: Dictionary = ROCKET_PARTS[index]["recipe"]
@@ -159,13 +214,17 @@ func start_fabrication(index: int, workers: int) -> String:
 
 # Motivo por el que la fabricación en curso no avanza (o avanza más lento). "" = avanza normal.
 func fabrication_block_reason() -> String:
+	if tiene_falla("t_energia"):
+		return "Corte de energía en la Tierra: ensamblaje detenido. Repáralo en Mantenimiento."
 	if tiene_falla("earth_crane"):
 		return "Grúa de ensamblaje averiada: la construcción está detenida. Repárala en Mantenimiento."
-	var sueldos := int(staff_count * 5)
+	var sueldos := int(staff_count * 35)
 	if budget < sueldos:
 		return "Sin dinero para pagar al personal (%d USD por sol): la fabricación está detenida." % sueldos
-	if not signal_active:
-		return "Sin señal: el personal trabaja al 40%."
+	if not is_signal_online():
+		return "Sin comunicación con la Tierra: el personal trabaja al 40%."
+	if tiene_falla("t_control"):
+		return "Centro de control caído: fabricación al 50% y máx. 4 trabajadores por pieza."
 	if tiene_falla("earth_burnout"):
 		return "Personal agotado: la fabricación avanza a la mitad de velocidad."
 	return ""
@@ -206,11 +265,15 @@ func food_left_on_arrival() -> float:
 	return food_rations - float(FLIGHT_DAYS)
 
 
+func launch_window_days_left() -> int:
+	return maxi(0, MAX_SOLS - current_sol)
+
+
 func launch_block_reason() -> String:
+	if current_sol > MAX_SOLS:
+		return "La ventana de lanzamiento se cerró después del Sol %d." % MAX_SOLS
 	if systems_ready() < ROCKET_PARTS.size():
 		return "Faltan sistemas por fabricar. Revisa el modo simulación."
-	if food_left_on_arrival() <= 0.0:
-		return "La comida no alcanza para los %d días de vuelo." % FLIGHT_DAYS
 	var ev := evaluate_launch_success()
 	if not ev["mass_ok"]:
 		return "La masa total supera la capacidad del lanzador."
@@ -239,9 +302,12 @@ func simulate_launch() -> Array[Dictionary]:
 					"text": "FALTA / en fabricación, quedan %d días" % ceili(part_days_left[i])})
 			_:
 				rows.append({"name": p["name"], "ok": false, "text": "FALTA / " + String(p["fault"])})
-	if food_left_on_arrival() <= 0.0:
-		rows.append({"name": "Reservas de comida", "ok": false,
-			"text": "FALTA / no alcanzan para %d días de vuelo" % FLIGHT_DAYS})
+	if current_sol <= MAX_SOLS:
+		rows.append({"name": "Ventana de despegue", "ok": true,
+			"text": "OK / abierta hasta el Sol %d (quedan %d Soles)" % [MAX_SOLS, launch_window_days_left()]})
+	else:
+		rows.append({"name": "Ventana de despegue", "ok": false,
+			"text": "CERRADA / se superó el límite del Sol %d" % MAX_SOLS})
 	var ev := evaluate_launch_success()
 	if not ev["mass_ok"]:
 		rows.append({"name": "Masa total", "ok": false, "text": "FALTA / supera la capacidad del lanzador"})
@@ -254,15 +320,13 @@ func simulate_launch() -> Array[Dictionary]:
 
 func launch_real() -> Dictionary:
 	if not can_launch():
-		return {"success": false, "arrival": arrival_sol(), "food_left": food_left_on_arrival()}
-	current_sol += FLIGHT_DAYS
-	food_rations -= float(FLIGHT_DAYS)
-	var result := {"success": true, "arrival": current_sol, "food_left": food_rations}
+		return {"success": false, "launch_sol": current_sol, "sols_left": launch_window_days_left()}
+	var sols_left := launch_window_days_left()
+	var result := {"success": true, "launch_sol": current_sol, "sols_left": sols_left}
 	change_phase(MissionPhase.EVALUATION)
-	Events.sol_advanced.emit(current_sol)
 	Events.resources_updated.emit()
 	state_changed.emit()
-	Events.launch_finished.emit(true, current_sol, food_rations)
+	Events.launch_finished.emit(true, current_sol, float(sols_left))
 	return result
 
 
@@ -293,29 +357,44 @@ func recalculate_engineering_stats() -> void:
 func advance_sol(ration_multiplier: float = 1.0, work_speed: float = 1.0) -> void:
 	current_sol += 1
 	orders_today = 0          # reinicia el límite diario de pedidos
-	_deliver_pending()        # entrega pedidos y suministros vencidos
+	if tiene_falla("t_proveedor"):
+		_delay_pending_deliveries()
+	else:
+		_deliver_pending()
 	_tick_faults()            # avanza reparaciones y sortea eventos nuevos
 	food_rations -= 1.0 * ration_multiplier
 
-	# Verificar derrota por falta de comida
+	# Verificar derrota por falta de comida (Botiquines otorgan +2 Soles extra cada uno)
 	if food_rations <= 0.0:
-		state_changed.emit()
-		change_phase(MissionPhase.EVALUATION)
-		return
+		if consume_supply("botiquin", 1):
+			food_rations = 2.0
+			GestorCalendario.obtener().registrar_evento(
+				current_sol,
+				"Botiquín usado: +2 Soles de soporte vital",
+				GestorCalendario.TIPO_MANTENIMIENTO,
+				"Raciones de emergencia médicas activadas al agotarse la comida."
+			)
+		else:
+			state_changed.emit()
+			change_phase(MissionPhase.EVALUATION)
+			return
 
 	# Gestionar días sin señal
 	if blackout_days_left > 0:
 		blackout_days_left -= 1
 		if blackout_days_left == 0:
 			signal_active = true
-			Events.signal_status_changed.emit(true)
+			Events.signal_status_changed.emit(is_signal_online())
 
 	# Avance de tus subordinados en la Tierra
-	var daily_cost := int(staff_count * 5 * work_speed)
+	var daily_cost := int(staff_count * 35 * work_speed)
 	if budget >= daily_cost:
 		budget -= daily_cost
-		var actual_efficiency := crew_efficiency if signal_active else crew_efficiency * 0.4
-		_tick_fabrication(work_speed * actual_efficiency)
+		if not tiene_falla("t_energia"):
+			var actual_efficiency := crew_efficiency if is_signal_online() else crew_efficiency * 0.4
+			if tiene_falla("t_control"):
+				actual_efficiency *= 0.5
+			_tick_fabrication(work_speed * actual_efficiency)
 
 	# Penalización por restricciones orbitales si se pasan los 60 días
 	if current_sol > MAX_SOLS:
@@ -339,7 +418,7 @@ func evaluate_launch_success() -> Dictionary:
 	var power_ok := net_power >= 0.0
 	var build_ok := build_progress >= 100.0
 	var orbit_ok := orbital_alignment >= 50.0
-	var survival_ok := food_rations > 0.0
+	var survival_ok := current_sol <= MAX_SOLS
 
 	var overall_success := mass_ok and power_ok and build_ok and orbit_ok and survival_ok
 
@@ -388,8 +467,10 @@ func get_estado_accion() -> String:
 func place_order(items: Dictionary) -> Dictionary:
 	if is_blocked():
 		return {"ok": false, "msg": _blocked_msg()}
-	if not signal_active:
-		return {"ok": false, "msg": "Sin señal: no puedes hacer pedidos."}
+	if not is_signal_online():
+		return {"ok": false, "msg": "Sin comunicación con la Tierra: no puedes hacer pedidos."}
+	if tiene_falla("t_proveedor"):
+		return {"ok": false, "msg": "Retraso de proveedor activo: resuélvelo en Mantenimiento."}
 	if orders_today >= Catalog.MAX_ORDERS_PER_SOL:
 		return {"ok": false, "msg": "Límite de pedidos por Sol alcanzado."}
 	var total := Catalog.order_total(items)
@@ -416,8 +497,8 @@ func place_order(items: Dictionary) -> Dictionary:
 func buy_supply(id: String) -> Dictionary:
 	if is_blocked():
 		return {"ok": false, "msg": _blocked_msg()}
-	if not signal_active:
-		return {"ok": false, "msg": "Sin señal: no puedes comprar suministros."}
+	if not is_signal_online():
+		return {"ok": false, "msg": "Sin comunicación con la Tierra: no puedes comprar suministros."}
 	var s := Catalog.get_supply(id)
 	if s.is_empty():
 		return {"ok": false, "msg": "Suministro desconocido."}
@@ -450,6 +531,22 @@ func _register_calendar_event(sol: int, texto: String) -> void:
 	)
 	if Events.has_signal("calendar_event_added"):
 		Events.calendar_event_added.emit(sol, texto)
+
+
+func _delay_pending_deliveries() -> void:
+	for o in pending_orders:
+		var old_sol := int(o["deliver_sol"])
+		var new_sol := old_sol + 1
+		o["deliver_sol"] = new_sol
+		GestorCalendario.obtener().cancelar_por_dato("entrega_sol", old_sol)
+		_register_calendar_event(new_sol, "Pedido retrasado ($%d)" % Catalog.order_total(o["items"]))
+	for p in pending_supplies:
+		var old_sol := int(p["deliver_sol"])
+		var new_sol := old_sol + 1
+		p["deliver_sol"] = new_sol
+		var s := Catalog.get_supply(str(p["id"]))
+		GestorCalendario.obtener().cancelar_por_dato("entrega_sol", old_sol)
+		_register_calendar_event(new_sol, "%s retrasado" % str(s.get("nombre", p["id"])))
 
 
 func _deliver_pending() -> void:
@@ -487,9 +584,62 @@ func get_workers_info() -> Dictionary:
 	return {"total": staff_count, "busy": workers_busy(), "free": workers_free()}
 
 
+func get_supply_count(id: String) -> int:
+	return int(supply_stock.get(id, 0))
+
+
+func consume_supply(id: String, amount: int = 1) -> bool:
+	var cur := get_supply_count(id)
+	if cur < amount:
+		return false
+	supply_stock[id] = cur - amount
+	Events.resources_updated.emit()
+	state_changed.emit()
+	return true
+
+
+func get_launch_preview_seconds() -> float:
+	return 1.6 + 0.45 * float(get_supply_count("enlace"))
+
+
 func _tick_faults() -> void:
-	for id in _fault_sys.tick_day(current_sol):
-		Events.adverse_event_triggered.emit(str(id))
+	var tiene_humo := get_supply_count("humo") > 0
+	var triggered: Array = _fault_sys.tick_day(current_sol, tiene_humo)
+
+	# Si se activó una emergencia marciana, limpiar su alerta previa del calendario
+	for id in triggered:
+		var sid := str(id)
+		var f_act := _fault_sys.find_fault(sid)
+		if str(f_act.get("tipo", "")) == "marte":
+			GestorCalendario.obtener().cancelar_por_dato("alerta_sensor", sid)
+
+		# Módulos de enlace absorben automáticamente una caída de antena
+		if sid == "t_antena" and consume_supply("enlace", 1):
+			f_act["activa"] = false
+			GestorCalendario.obtener().registrar_evento(
+				current_sol,
+				"Módulo de enlace absorbió caída de antena",
+				GestorCalendario.TIPO_MANTENIMIENTO,
+				"Se consumió 1 módulo de enlace para mantener la señal sin interrupciones."
+			)
+			continue
+
+		Events.adverse_event_triggered.emit(sid)
+
+	# Detector de humo: registra alerta temprana en calendario 1 Sol antes
+	if _fault_sys.pending_mars_id != "":
+		var pf := _fault_sys.find_fault(_fault_sys.pending_mars_id)
+		var titulo_alerta := str(pf.get("titulo", "Emergencia"))
+		var dia_alerta := mini(current_sol + 1, MAX_SOLS)
+		GestorCalendario.obtener().cancelar_por_dato("alerta_sensor", _fault_sys.pending_mars_id)
+		GestorCalendario.obtener().registrar_evento(
+			dia_alerta,
+			"Alerta sensor: " + titulo_alerta,
+			GestorCalendario.TIPO_MANTENIMIENTO,
+			"El detector de humo anticipó una anomalía inminente en la base de Marte.",
+			{"alerta_sensor": _fault_sys.pending_mars_id}
+		)
+
 	for f in _fault_sys.get_faults():
 		if str(f.get("tipo", "")) == "tierra" and not bool(f.get("en_reparacion", false)):
 			GestorCalendario.obtener().cancelar_por_dato("reparacion_id", str(f.get("id", "")))
@@ -507,20 +657,44 @@ func reparar_falla(id: String) -> Dictionary:
 		if not f["activa"]:
 			return {"ok": false, "msg": "Ese evento ya no está activo."}
 		var costo := int(f["costo"])
-		if budget < costo:
-			return {"ok": false, "msg": "No tienes dinero suficiente"}
+		var pierde_dia := true
+		var nota_suministro := ""
+
+		# Extintores: -50% costo y conserva el Sol en Apagón o Daño estructural
+		if id in ["m_apagon", "m_estructura"] and get_supply_count("extintor") > 0:
+			var costo_desc := int(round(costo * 0.5))
+			if budget < costo_desc:
+				return {"ok": false, "msg": "No tienes dinero suficiente"}
+			consume_supply("extintor", 1)
+			costo = costo_desc
+			pierde_dia = false
+			nota_suministro = " (Extintor usado: -50% costo y conservas el Sol)"
+		# Botiquines: -50% costo en Fuga de agua o Daño estructural
+		elif id in ["m_agua", "m_estructura"] and get_supply_count("botiquin") > 0:
+			var costo_desc := int(round(costo * 0.5))
+			if budget < costo_desc:
+				return {"ok": false, "msg": "No tienes dinero suficiente"}
+			consume_supply("botiquin", 1)
+			costo = costo_desc
+			nota_suministro = " (Botiquín usado: -50% costo)"
+		else:
+			if budget < costo:
+				return {"ok": false, "msg": "No tienes dinero suficiente"}
+
 		budget -= costo
 		_fault_sys.resolve_mars(id)
 		Events.resources_updated.emit()
 		state_changed.emit()
-		advance_sol()   # día perdido
-		return {"ok": true, "msg": "Emergencia resuelta (-$%d). Perdiste el día: ahora es el Sol %d." % [costo, current_sol]}
+		if pierde_dia:
+			advance_sol()   # día perdido
+			return {"ok": true, "msg": "Emergencia resuelta (-$%d)%s. Perdiste el día: ahora es el Sol %d." % [costo, nota_suministro, current_sol]}
+		return {"ok": true, "msg": "Emergencia resuelta (-$%d)%s. Conservas el Sol %d." % [costo, nota_suministro, current_sol]}
 
 	# Tierra
 	if is_blocked():
 		return {"ok": false, "msg": _blocked_msg()}
-	if not signal_active:
-		return {"ok": false, "msg": "Sin señal: no puedes dar órdenes a la Tierra."}
+	if not is_signal_online() and id != "t_antena":
+		return {"ok": false, "msg": "Sin comunicación: repara primero la antena terrestre."}
 	var res := _fault_sys.start_earth_repair(id, workers_free())
 	if bool(res.get("ok", false)):
 		var dia_rep := mini(current_sol + int(f.get("dias_rep", 1)), MAX_SOLS)
@@ -538,7 +712,7 @@ func reparar_falla(id: String) -> Dictionary:
 	return res
 
 
-## Solo para pruebas: fuerza un evento (p. ej. debug_forzar_evento("m_oxigeno")).
+## Solo para pruebas: fuerza un evento (p. ej. debug_forzar_evento("m_apagon")).
 func debug_forzar_evento(id: String) -> void:
 	_fault_sys.force_activate(id)
 	state_changed.emit()
