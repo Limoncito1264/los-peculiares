@@ -34,7 +34,7 @@ func _ready() -> void:
 
 	col.add_child(AresUI.label("04 / PRUEBAS Y MISIÓN FINAL", 12, AresUI.AMBER))
 	col.add_child(AresUI.label("Construye una oportunidad de volver.", 32, AresUI.TEXT, true))
-	col.add_child(AresUI.label("Ganas si el cohete alcanza Marte antes de agotar tus reservas.", 14, AresUI.MUTED))
+	col.add_child(AresUI.label("Ganas si logras despegar antes de que se cierre la ventana de lanzamiento en el Sol %d." % GameManager.MAX_SOLS, 14, AresUI.MUTED))
 	col.add_child(AresUI.hline())
 
 	col.add_child(_build_route())
@@ -48,7 +48,7 @@ func _ready() -> void:
 	col.add_child(AresUI.label("CONTROL PREVIO AL DESPEGUE", 20, AresUI.TEXT, true))
 	col.add_child(_build_systems_row())
 	col.add_child(_build_arrival_row())
-	col.add_child(AresUI.label("EL TIEMPO DE VUELO TAMBIÉN CONSUME COMIDA.", 12, AresUI.AMBER))
+	col.add_child(AresUI.label("SI SUPERAS EL SOL %d, LA VENTANA DE DESPEGUE SE CIERRA." % GameManager.MAX_SOLS, 12, AresUI.AMBER))
 	_lbl_msg = AresUI.label("", 12, AresUI.MUTED)
 	col.add_child(_lbl_msg)
 
@@ -81,12 +81,12 @@ func _build_route() -> Control:
 	_lbl_flight = AresUI.label("", 23, AresUI.AMBER, true)
 	var mid := VBoxContainer.new()
 	mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	mid.add_child(AresUI.label("VUELO ESTIMADO", 10, AresUI.MUTED))
+	mid.add_child(AresUI.label("VENTANA DE DESPEGUE", 10, AresUI.MUTED))
 	mid.add_child(_lbl_flight)
 	row.add_child(mid)
 	row.add_child(_route_col("RESCATE / MARTE", AresUI.AMBER, "ASTRONAUTA", 27, AresUI.TEXT))
 
-	v.add_child(AresUI.label("OBJETIVO: LLEGAR ANTES DEL DÍA %d" % GameManager.MAX_SOLS, 10, AresUI.MUTED))
+	v.add_child(AresUI.label("OBJETIVO: DESPEGAR EN %d SOLES O MENOS" % GameManager.MAX_SOLS, 10, AresUI.MUTED))
 	return p
 
 
@@ -158,7 +158,7 @@ func _build_arrival_row() -> Control:
 	p.custom_minimum_size = Vector2(0, 62)
 	var h := HBoxContainer.new()
 	p.add_child(h)
-	var t := AresUI.label("SI DESPEGARAS HOY, LLEGARÍAS EL DÍA", 12, AresUI.MUTED)
+	var t := AresUI.label("SOLES RESTANTES DE VENTANA DE DESPEGUE", 12, AresUI.MUTED)
 	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	h.add_child(t)
 	_lbl_arrival = AresUI.label("", 32, AresUI.TEXT, true)
@@ -178,13 +178,27 @@ func _refresh() -> void:
 		return
 	var total := GameManager.ROCKET_PARTS.size()
 	var listos := GameManager.systems_ready()
-	_lbl_flight.text = "%d DÍAS  >>" % GameManager.FLIGHT_DAYS
+	_lbl_flight.text = "SOL %d MÁX  >>" % GameManager.MAX_SOLS
 	_lbl_systems.text = str(listos)
-	_lbl_arrival.text = str(GameManager.arrival_sol())
-	# [Decisión] El botón de revisión se bloquea hasta tener 4/4 (Figma lo muestra activo con 0/4).
-	_btn_launch.disabled = listos < total
-	_lbl_msg.text = "Faltan sistemas por fabricar. Revisa el modo simulación." if listos < total \
-		else "Sistemas completos. Puedes revisar el lanzamiento."
+	_lbl_arrival.text = "%d" % GameManager.launch_window_days_left()
+	var sin_energia: bool = GameManager.tiene_falla("t_energia")
+	var falla_soft: bool = GameManager.tiene_falla("t_software")
+	if sin_energia:
+		_btn_sim.disabled = true
+		_btn_sim.text = "SIN ENERGÍA EN BASE"
+		_btn_launch.disabled = true
+		_lbl_msg.text = "Corte de energía en la Tierra: simulación y lanzamiento bloqueados."
+	elif falla_soft:
+		_btn_sim.disabled = true
+		_btn_sim.text = "SERVIDOR FUERA DE LÍNEA"
+		_btn_launch.disabled = listos < total
+		_lbl_msg.text = "Falla de software: servidor de simulación reiniciándose."
+	else:
+		_btn_sim.disabled = false
+		_btn_sim.text = "SIMULAR VUELO  >>"
+		_btn_launch.disabled = listos < total
+		_lbl_msg.text = "Faltan sistemas por fabricar. Revisa el modo simulación." if listos < total \
+			else "Sistemas completos. Puedes revisar el lanzamiento."
 
 
 # ------------------------------------------------------------------
@@ -196,7 +210,8 @@ func _host() -> Node:
 
 
 func _open_simulation() -> void:
-	LaunchSlingshot.open(_host(), true)
+	var s := LaunchSlingshot.open(_host(), true)
+	s.preview_seconds = GameManager.get_launch_preview_seconds()
 
 func _go_to_design(overlay: Node) -> void:
 	overlay.queue_free()
@@ -217,7 +232,7 @@ func _open_confirm() -> void:
 	body.add_child(AresUI.label("MISIÓN FINAL / OPERACIÓN IRREVERSIBLE", 12, AresUI.AMBER))
 	body.add_child(AresUI.label("¿Despegar hacia Marte?", 32, AresUI.TEXT, true))
 	body.add_child(AresUI.wrapped(
-		"La nave se arriesga en un vuelo real. Debes tener los cuatro sistemas fabricados y comida suficiente para los %d días de viaje." % GameManager.FLIGHT_DAYS,
+		"La nave se arriesga en un lanzamiento real. Debes tener los cuatro sistemas fabricados y despegar en el Sol %d o antes." % GameManager.MAX_SOLS,
 		15, AresUI.MUTED))
 	body.add_child(AresUI.hline())
 
@@ -233,8 +248,8 @@ func _open_confirm() -> void:
 	stats.add_child(s1)
 	var s2 := VBoxContainer.new()
 	s2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	s2.add_child(AresUI.label("LLEGADA PREVISTA / DÍA", 11, AresUI.MUTED))
-	s2.add_child(AresUI.label(str(GameManager.arrival_sol()), 36, AresUI.TEXT, true))
+	s2.add_child(AresUI.label("SOL DE DESPEGUE / LÍMITE", 11, AresUI.MUTED))
+	s2.add_child(AresUI.label("%d / %d" % [GameManager.current_sol, GameManager.MAX_SOLS], 36, AresUI.TEXT, true))
 	stats.add_child(s2)
 	body.add_child(stats)
 
@@ -262,12 +277,12 @@ func _open_confirm() -> void:
 func _confirm_launch(overlay: Node) -> void:
 	overlay.queue_free()
 	var s := LaunchSlingshot.open(_host(), false)
+	s.preview_seconds = GameManager.get_launch_preview_seconds()
 	s.finished.connect(_on_slingshot_finished)
 
 
-func _on_slingshot_finished(success: bool) -> void:
-	if success:
-		_open_victory({"arrival": GameManager.arrival_sol(), "food_left": GameManager.food_rations})
+func _on_slingshot_finished(_success: bool) -> void:
+	pass
 
 
 func _open_victory(result: Dictionary) -> void:
@@ -278,7 +293,7 @@ func _open_victory(result: Dictionary) -> void:
 	body.add_child(AresUI.label("ENLACE DE RESCATE / MARTE", 12, AresUI.TEAL))
 	body.add_child(AresUI.label("No estabas solo.", 48, AresUI.TEXT, true))
 	body.add_child(AresUI.wrapped(
-		"El cohete ha llegado a Marte antes de que se agotara tu comida. El equipo de la Tierra lo consiguió contigo.",
+		"El cohete despegó dentro de la ventana orbital hacia Marte. El equipo de la Tierra lo consiguió contigo.",
 		16, AresUI.MUTED))
 	body.add_child(AresUI.hline())
 
@@ -286,13 +301,13 @@ func _open_victory(result: Dictionary) -> void:
 	stats.add_theme_constant_override("separation", 40)
 	var s1 := VBoxContainer.new()
 	s1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	s1.add_child(AresUI.label("DÍA DE LLEGADA", 11, AresUI.MUTED))
-	s1.add_child(AresUI.label(str(result["arrival"]), 38, AresUI.TEXT, true))
+	s1.add_child(AresUI.label("SOL DE DESPEGUE", 11, AresUI.MUTED))
+	s1.add_child(AresUI.label(str(result.get("launch_sol", GameManager.current_sol)), 38, AresUI.TEXT, true))
 	stats.add_child(s1)
 	var s2 := VBoxContainer.new()
 	s2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	s2.add_child(AresUI.label("DÍAS DE COMIDA RESTANTES", 11, AresUI.MUTED))
-	s2.add_child(AresUI.label(str(int(result["food_left"])), 38, AresUI.TEAL, true))
+	s2.add_child(AresUI.label("SOLES DE MARGEN", 11, AresUI.MUTED))
+	s2.add_child(AresUI.label(str(int(result.get("sols_left", 0))), 38, AresUI.TEAL, true))
 	stats.add_child(s2)
 	body.add_child(stats)
 
