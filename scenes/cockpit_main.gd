@@ -19,12 +19,14 @@ extends Control
 @onready var btn_lanzamiento: Button = $VBoxPrincipal/CuerpoMonitor/PanelDerecho/BotonesMenu/BtnLanzamiento
 
 const RUTAS_MENU := {
+	"inicio": "res://scenes/tab_inicio.tscn",
 	"comprar": "res://scenes/tab_materials.tscn",
 	"mantenimiento": "res://scenes/tab_maintenance.tscn",
 	"diseno": "res://scenes/tab_design.tscn",
 	"lanzamiento": "res://scenes/tab_launch.tscn",
 }
 const TITULOS_MENU := {
+	"inicio": "Inicio",
 	"comprar": "Materiales",
 	"mantenimiento": "Mantenimiento",
 	"diseno": "Diseño",
@@ -57,7 +59,7 @@ func _ready() -> void:
 
 	_actualizar_header()
 	_actualizar_senal(GameManager.signal_active)
-	cambiar_menu("comprar")
+	cambiar_menu("inicio")
 
 
 func cambiar_menu(clave: String) -> void:

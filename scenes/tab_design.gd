@@ -376,3 +376,11 @@ func _refresh() -> void:
 	elif pending:
 		_lbl_status.text = "Insumos listos. Asigna trabajadores e inicia la fabricación."
 		_lbl_status.add_theme_color_override("font_color", AresUI.TEAL)
+	elif st == GameManager.PartState.IN_PROGRESS:
+		var motivo: String = GameManager.fabrication_block_reason()
+		if motivo != "":
+			_lbl_status.text = motivo
+			_lbl_status.add_theme_color_override("font_color", AresUI.AMBER)
+		else:
+			_lbl_status.text = "Fabricando. Avanza un sol para que los trabajadores progresen."
+			_lbl_status.add_theme_color_override("font_color", AresUI.TEAL)

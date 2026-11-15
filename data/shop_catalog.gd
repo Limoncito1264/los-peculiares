@@ -18,24 +18,12 @@ const _MATERIALS := [
 	{"id": "titanio",    "nombre": "Titanio aeroespacial", "precio": 65},
 ]
 
+# Circuitos que piden las recetas de Diseño (GameManager.ROCKET_PARTS). Si cambias una receta, cambia aquí también.
 const _CIRCUITS := [
-	{"id": "sensor",     "nombre": "Sensor de presión",     "precio": 25},
-	{"id": "panel_sol",  "nombre": "Controlador solar",     "precio": 30},
-	{"id": "regulador",  "nombre": "Regulador de voltaje",  "precio": 35},
-	{"id": "motor_ctl",  "nombre": "Controlador de motor",  "precio": 45},
-	{"id": "bateria",    "nombre": "Módulo de batería",     "precio": 55},
-	{"id": "procesador", "nombre": "Procesador de vuelo",   "precio": 60},
-	{"id": "comms",      "nombre": "Módulo de comunicación","precio": 65},
-]
-
-# Recetas de cohete (placeholder: ajusta a tu documento). Aún no las usa la UI.
-const ROCKET_RECIPES := [
-	{"id": "r1", "nombre": "Cohete Explorador I",   "requiere": {"aluminio": 4, "sensor": 2}},
-	{"id": "r2", "nombre": "Cohete Explorador II",  "requiere": {"acero": 4, "regulador": 2}},
-	{"id": "r3", "nombre": "Cohete Carguero",       "requiere": {"fibra_c": 3, "motor_ctl": 2}},
-	{"id": "r4", "nombre": "Cohete Orbital",        "requiere": {"titanio": 3, "procesador": 1}},
-	{"id": "r5", "nombre": "Cohete de Rescate",     "requiere": {"titanio": 4, "comms": 2, "bateria": 2}},
-	{"id": "r6", "nombre": "Cohete de Retorno",     "requiere": {"titanio": 6, "procesador": 2, "comms": 2}},
+	{"id": "c_termico",  "nombre": "Sensor térmico",        "precio": 25},
+	{"id": "c_potencia", "nombre": "Módulo de potencia",    "precio": 45},
+	{"id": "c_guiado",   "nombre": "Circuito de guiado",    "precio": 60},
+	{"id": "c_enlace",   "nombre": "Módulo de enlace",      "precio": 65},
 ]
 
 # Suministros de seguridad (se compran de 1 en 1)
