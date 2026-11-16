@@ -12,6 +12,8 @@ const DEFAULT_WORKERS := 2
 
 var workers_total: int = DEFAULT_WORKERS
 var mars_cooldown: int = 0
+## Emergencia marciana anticipada por el detector de humo (se activa el Sol siguiente).
+var pending_mars_id: String = ""
 
 # prob = probabilidad diaria. costo solo aplica a Marte. dias_rep solo a Tierra.
 var faults: Array = [
@@ -103,8 +105,18 @@ func start_earth_repair(id: String, free_override: int = -1) -> Dictionary:
 # ---------- Paso del tiempo ----------
 
 ## Se llama una vez por Sol. Devuelve los ids de eventos recién activados.
-func tick_day(current_sol: int) -> Array:
+## Con `has_smoke_detector`, una emergencia en Marte se anuncia 1 Sol antes
+## (queda en `pending_mars_id`) y se activa en el siguiente tick.
+func tick_day(current_sol: int, has_smoke_detector: bool = false) -> Array:
 	var triggered: Array = []
+
+	# 0) Si había una emergencia anticipada, se activa hoy.
+	if pending_mars_id != "":
+		var pf := find_fault(pending_mars_id)
+		if not pf.is_empty():
+			pf["activa"] = true
+			triggered.append(pending_mars_id)
+		pending_mars_id = ""
 
 	# 1) Avanzan las reparaciones terrestres (siguen aunque haya emergencia en Marte)
 	for f in faults:
@@ -127,13 +139,16 @@ func tick_day(current_sol: int) -> Array:
 
 	# 4) Sorteo de emergencia en Marte: máx. UNA, nunca dos a la vez,
 	#    ni en los primeros Soles, ni durante el enfriamiento.
-	if current_sol > MARS_GRACE_SOLS and mars_cooldown == 0 and not has_mars_event():
+	if current_sol > MARS_GRACE_SOLS and mars_cooldown == 0 and not has_mars_event() and pending_mars_id == "":
 		var candidatas: Array = faults.filter(func(x): return x["tipo"] == "marte" and not x["activa"])
 		candidatas.shuffle()
 		for f in candidatas:
 			if randf() < float(f["prob"]):
-				f["activa"] = true
-				triggered.append(f["id"])
+				if has_smoke_detector:
+					pending_mars_id = str(f["id"])   # aviso previo, se activa mañana
+				else:
+					f["activa"] = true
+					triggered.append(f["id"])
 				break
 
 	return triggered
